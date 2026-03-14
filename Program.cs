@@ -175,6 +175,9 @@ using (var scope = app.Services.CreateScope())
 
     // Seed rule templates
     RuleTemplateSeeder.SeedTemplates(context);
+
+    // Create rules from templates (idempotent - only adds new rules)
+    RuleTemplateSeeder.SeedRulesFromTemplates(context);
 }
 
 // Run on port 8001
