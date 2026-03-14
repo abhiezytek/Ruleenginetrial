@@ -1,16 +1,38 @@
-# React + Vite
+# Insurance STP Rule Engine — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite + Tailwind CSS frontend for the Insurance STP Rule Engine backend API.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+cp .env.example .env          # edit VITE_API_URL if backend is not on localhost:5115
+npm run dev                   # starts dev server on http://localhost:5173
+```
 
-## React Compiler
+## Build
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm run build                 # outputs to dist/
+npm run preview               # preview the production build
+```
 
-## Expanding the ESLint configuration
+## Pages
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+| Route | Description |
+|-------|-------------|
+| `/` | **Dashboard** — stats cards (rules, templates, evaluations, pass rate) + recent evaluations table |
+| `/evaluate` | **Evaluate Proposal** — 11-section accordion form with all STP fields; inline results panel |
+| `/history` | **Evaluation History** — table with letter flags, follow-up codes; click to expand details |
+| `/rules` | **Rules** — all 95 seeded STP rules with search, category filter, enable toggle |
+| `/templates` | **Templates** — all 95 STP rule templates grouped by rule ID range |
+
+## Key Features
+
+- **Auto-BMI calculation** from height + weight
+- **Conditional fields** (pregnancy weeks appear only when `is_pregnant=true`, smoker details only when `is_smoker=true`, etc.)
+- **Letter Flag display** — `O` (orange, Offer/RUW referral) and `L` (blue, Loading/requirement letter)
+- **Follow-Up Code display** — purple monospace badges with descriptions (MPN=Physical MER, MCE=CBC & ESR, WGN=Gynaecologist Report, IPR=Income Proof, NCM=Exit/Entry Details, etc.)
+- **Rule Trace accordion** — expandable per-rule triggered/not-triggered breakdown
+- **Vite dev proxy** for `/api` → backend so CORS is not needed in development
+- API base URL configurable via `VITE_API_URL` environment variable

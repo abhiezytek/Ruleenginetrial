@@ -34,9 +34,10 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
 
   const fetchAll = () =>
-    Promise.all([api.getDashboardStats(), api.getEvaluations()])
-      .then(([s, evals]) => {
-        setStats(s);
+    Promise.all([api.getDashboardStats(), api.getEvaluations(), api.getTemplates()])
+      .then(([s, evals, templates]) => {
+        // merge template count into stats
+        setStats({ ...s, total_templates: Array.isArray(templates) ? templates.length : 0 });
         const list = Array.isArray(evals) ? evals : evals?.items ?? evals?.data ?? [];
         setEvaluations(list.slice(0, 10));
       })
@@ -46,11 +47,14 @@ export default function Dashboard() {
   // Initial load — loading starts true, no synchronous setState needed in effect
   useEffect(() => { fetchAll(); }, []);
 
-  const passCount = evaluations.filter((e) => e.stp_decision === 'PASS').length;
-  const failCount = evaluations.filter((e) => e.stp_decision === 'FAIL').length;
+  const passCount = stats?.stp_pass ?? evaluations.filter((e) => e.stp_decision === 'PASS').length;
+  const failCount = stats?.stp_fail ?? evaluations.filter((e) => e.stp_decision === 'FAIL').length;
+  const totalEvals = stats?.total_evaluations ?? evaluations.length;
   const passRate =
-    evaluations.length > 0
-      ? Math.round((passCount / evaluations.length) * 100)
+    totalEvals > 0
+      ? Math.round((passCount / totalEvals) * 100)
+      : stats?.stp_rate != null && stats.stp_rate > 0
+      ? Math.round(stats.stp_rate)
       : null;
 
   return (
@@ -82,7 +86,7 @@ export default function Dashboard() {
             label="Total Rules"
             value={stats?.total_rules ?? stats?.totalRules ?? '—'}
             color="bg-blue-500"
-            sub={`${stats?.enabled_rules ?? stats?.enabledRules ?? 0} enabled`}
+            sub={`${stats?.active_rules ?? stats?.enabled_rules ?? stats?.enabledRules ?? 0} active`}
           />
           <StatCard
             icon={FileText}
@@ -94,7 +98,7 @@ export default function Dashboard() {
           <StatCard
             icon={ClipboardList}
             label="Evaluations"
-            value={stats?.total_evaluations ?? stats?.totalEvaluations ?? evaluations.length}
+            value={totalEvals}
             color="bg-teal-500"
             sub="total processed"
           />

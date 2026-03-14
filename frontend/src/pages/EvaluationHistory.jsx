@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import {
   CheckCircle2,
   XCircle,
@@ -166,9 +166,8 @@ export default function EvaluationHistory() {
                   const rowId = ev.proposal_id ?? ev.id ?? idx;
                   const isExpanded = expandedRow === rowId;
                   return (
-                    <>
+                    <Fragment key={rowId}>
                       <tr
-                        key={`row-${rowId}`}
                         className="hover:bg-gray-50 cursor-pointer"
                         onClick={() => toggleRow(rowId)}
                       >
@@ -231,7 +230,7 @@ export default function EvaluationHistory() {
                       {isExpanded && (
                         <ExpandedRow key={`exp-${rowId}`} ev={ev} />
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>

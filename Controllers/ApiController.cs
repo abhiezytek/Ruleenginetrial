@@ -1899,6 +1899,8 @@ public class ApiController : ControllerBase
         reason_codes = JsonSerializer.Deserialize<List<string>>(e.ReasonCodesJson),
         reason_messages = JsonSerializer.Deserialize<List<string>>(e.ReasonMessagesJson),
         rule_trace = JsonSerializer.Deserialize<List<object>>(e.RuleTraceJson),
+        letter_flags = JsonSerializer.Deserialize<List<string>>(e.LetterFlagsJson ?? "[]"),
+        follow_up_codes = JsonSerializer.Deserialize<List<string>>(e.FollowUpCodesJson ?? "[]"),
         evaluation_time_ms = e.EvaluationTimeMs,
         evaluated_at = e.EvaluatedAt
     };
