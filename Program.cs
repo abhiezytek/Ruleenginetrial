@@ -158,6 +158,12 @@ using (var scope = app.Services.CreateScope())
                 performed_by TEXT NOT NULL,
                 performed_at TEXT               
             )");
+
+        // Add new columns to evaluations table if they don't exist (for existing DBs)
+        try { context.Database.ExecuteSqlRaw("ALTER TABLE evaluations ADD COLUMN letter_flags TEXT DEFAULT '[]'"); }
+        catch { /* Column already exists */ }
+        try { context.Database.ExecuteSqlRaw("ALTER TABLE evaluations ADD COLUMN follow_up_codes TEXT DEFAULT '[]'"); }
+        catch { /* Column already exists */ }
     }
     catch (Exception ex)
     {

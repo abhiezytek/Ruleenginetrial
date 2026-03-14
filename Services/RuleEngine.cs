@@ -17,13 +17,24 @@ public class RuleEngine
             ["less_than"] = (a, b, _) => CompareValues(a, b) < 0,
             ["greater_than_or_equal"] = (a, b, _) => CompareValues(a, b) >= 0,
             ["less_than_or_equal"] = (a, b, _) => CompareValues(a, b) <= 0,
+            // Short aliases for numeric comparisons
+            ["gt"] = (a, b, _) => CompareValues(a, b) > 0,
+            ["gte"] = (a, b, _) => CompareValues(a, b) >= 0,
+            ["lt"] = (a, b, _) => CompareValues(a, b) < 0,
+            ["lte"] = (a, b, _) => CompareValues(a, b) <= 0,
             ["between"] = (a, b, c) => CompareValues(a, b) >= 0 && CompareValues(a, c) <= 0,
             ["in"] = (a, b, _) => IsInList(a, b),
             ["not_in"] = (a, b, _) => !IsInList(a, b),
             ["contains"] = (a, b, _) => a?.ToString()?.ToLower().Contains(b?.ToString()?.ToLower() ?? "") ?? false,
             ["starts_with"] = (a, b, _) => a?.ToString()?.ToLower().StartsWith(b?.ToString()?.ToLower() ?? "") ?? false,
             ["is_empty"] = (a, _, __) => a == null || string.IsNullOrEmpty(a.ToString()),
-            ["is_not_empty"] = (a, _, __) => a != null && !string.IsNullOrEmpty(a.ToString())
+            ["is_not_empty"] = (a, _, __) => a != null && !string.IsNullOrEmpty(a.ToString()),
+            // Existence checks
+            ["exists"] = (a, _, __) => a != null && !string.IsNullOrEmpty(a.ToString()),
+            ["not_exists"] = (a, _, __) => a == null || string.IsNullOrEmpty(a.ToString()),
+            // Boolean shortcuts
+            ["is_true"] = (a, _, __) => a is bool bv ? bv : a?.ToString()?.ToLower() == "true",
+            ["is_false"] = (a, _, __) => a is bool bv ? !bv : a?.ToString()?.ToLower() == "false",
         };
     }
     

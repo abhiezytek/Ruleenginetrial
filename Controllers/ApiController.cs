@@ -502,45 +502,12 @@ public class ApiController : ControllerBase
         var validationErrors = new List<string>();
         var reasonCodes = new List<string>();
         var reasonMessages = new List<string>();
+        var letterFlags = new List<string>();
+        var followUpCodes = new List<string>();
         var ruleTrace = new List<RuleExecutionTrace>();
         var stageTrace = new List<StageExecutionTrace>();
         
-        var proposalDict = new Dictionary<string, object?>
-        {
-            ["proposal_id"] = proposal.ProposalId,
-            ["product_code"] = proposal.ProductCode,
-            ["product_type"] = proposal.ProductType,
-            ["applicant_age"] = proposal.ApplicantAge,
-            ["applicant_gender"] = proposal.ApplicantGender,
-            ["applicant_income"] = proposal.ApplicantIncome,
-            ["sum_assured"] = proposal.SumAssured,
-            ["premium"] = proposal.Premium,
-            ["payment_mode"] = proposal.PaymentMode,
-            ["bmi"] = proposal.Bmi,
-            ["height"] = proposal.Height,
-            ["weight"] = proposal.Weight,
-            ["qualification"] = proposal.Qualification,
-            ["occupation_code"] = proposal.OccupationCode,
-            ["occupation_risk"] = proposal.OccupationRisk,
-            ["agent_code"] = proposal.AgentCode,
-            ["agent_tier"] = proposal.AgentTier,
-            ["pincode"] = proposal.Pincode,
-            ["is_smoker"] = proposal.IsSmoker,
-            ["is_alcoholic"] = proposal.IsAlcoholic,
-            ["is_narcotic"] = proposal.IsNarcotic,
-            ["has_medical_history"] = proposal.HasMedicalHistory,
-            ["is_adventurous"] = proposal.IsAdventurous,
-            ["existing_coverage"] = proposal.ExistingCoverage,
-            // Conditional fields for dependent rules - these were missing!
-            ["cigarettes_per_day"] = proposal.CigarettesPerDay,
-            ["smoking_years"] = proposal.SmokingYears,
-            ["alcohol_type"] = proposal.AlcoholType,
-            ["alcohol_quantity"] = proposal.AlcoholQuantity,
-            ["ailment_type"] = proposal.AilmentType,
-            ["ailment_details"] = proposal.AilmentDetails,
-            ["ailment_duration_years"] = proposal.AilmentDurationYears,
-            ["is_ailment_ongoing"] = proposal.IsAilmentOngoing
-        };
+        var proposalDict = GetProposalDict(proposal);
         
         // Get all stages ordered by execution order
         var stages = await _context.RuleStages
@@ -600,6 +567,7 @@ public class ApiController : ControllerBase
                     Triggered = triggered,
                     ConditionResult = triggered,
                     ActionApplied = triggered ? rule.Action : null,
+                    LetterFlag = triggered ? rule.Action.LetterFlag : null,
                     ExecutionTimeMs = ruleStopwatch.Elapsed.TotalMilliseconds
                 };
                 
@@ -616,6 +584,17 @@ public class ApiController : ControllerBase
                     if (rule.Category == "validation" && !string.IsNullOrEmpty(action.ReasonMessage))
                         validationErrors.Add(action.ReasonMessage);
                     
+                    // Collect letter flag and follow-up codes
+                    if (!string.IsNullOrEmpty(action.LetterFlag))
+                        letterFlags.Add(action.LetterFlag);
+                    if (!string.IsNullOrEmpty(action.ReasonCode))
+                    {
+                        reasonCodes.Add(action.ReasonCode);
+                        // L-flagged rules generate requirement follow-up codes
+                        if (action.LetterFlag == "L")
+                            followUpCodes.Add(action.ReasonCode);
+                    }
+
                     // Handle decisions
                     if (action.Decision == "FAIL")
                     {
@@ -632,9 +611,6 @@ public class ApiController : ControllerBase
                     if (action.ScoreImpact.HasValue)
                         scorecardValue += action.ScoreImpact.Value;
                     
-                    // Collect reason codes/messages
-                    if (!string.IsNullOrEmpty(action.ReasonCode))
-                        reasonCodes.Add(action.ReasonCode);
                     if (!string.IsNullOrEmpty(action.ReasonMessage))
                         reasonMessages.Add(action.ReasonMessage);
                     
@@ -707,6 +683,7 @@ public class ApiController : ControllerBase
                         Triggered = triggered,
                         ConditionResult = triggered,
                         ActionApplied = triggered ? rule.Action : null,
+                        LetterFlag = triggered ? rule.Action.LetterFlag : null,
                         ExecutionTimeMs = ruleStopwatch.Elapsed.TotalMilliseconds
                     };
                     
@@ -722,6 +699,15 @@ public class ApiController : ControllerBase
                         if (rule.Category == "validation" && !string.IsNullOrEmpty(action.ReasonMessage))
                             validationErrors.Add(action.ReasonMessage);
                         
+                        if (!string.IsNullOrEmpty(action.LetterFlag))
+                            letterFlags.Add(action.LetterFlag);
+                        if (!string.IsNullOrEmpty(action.ReasonCode))
+                        {
+                            reasonCodes.Add(action.ReasonCode);
+                            if (action.LetterFlag == "L")
+                                followUpCodes.Add(action.ReasonCode);
+                        }
+
                         if (action.Decision == "FAIL")
                         {
                             stpDecision = "FAIL";
@@ -735,8 +721,6 @@ public class ApiController : ControllerBase
                         if (action.ScoreImpact.HasValue)
                             scorecardValue += action.ScoreImpact.Value;
                         
-                        if (!string.IsNullOrEmpty(action.ReasonCode))
-                            reasonCodes.Add(action.ReasonCode);
                         if (!string.IsNullOrEmpty(action.ReasonMessage))
                             reasonMessages.Add(action.ReasonMessage);
                         
@@ -791,6 +775,8 @@ public class ApiController : ControllerBase
             ValidationErrors = validationErrors,
             ReasonCodes = reasonCodes.Distinct().ToList(),
             ReasonMessages = reasonMessages.Distinct().ToList(),
+            LetterFlags = letterFlags.Distinct().ToList(),
+            FollowUpCodes = followUpCodes.Distinct().ToList(),
             RuleTrace = ruleTrace,
             StageTrace = stageTrace,
             RiskLoading = riskLoading,
@@ -811,6 +797,8 @@ public class ApiController : ControllerBase
             ValidationErrorsJson = JsonSerializer.Serialize(result.ValidationErrors),
             ReasonCodesJson = JsonSerializer.Serialize(result.ReasonCodes),
             ReasonMessagesJson = JsonSerializer.Serialize(result.ReasonMessages),
+            LetterFlagsJson = JsonSerializer.Serialize(result.LetterFlags),
+            FollowUpCodesJson = JsonSerializer.Serialize(result.FollowUpCodes),
             RuleTraceJson = JsonSerializer.Serialize(result.RuleTrace),
             EvaluationTimeMs = result.EvaluationTimeMs,
             EvaluatedAt = result.EvaluatedAt
@@ -958,6 +946,8 @@ public class ApiController : ControllerBase
         var validationErrors = new List<string>();
         var reasonCodes = new List<string>();
         var reasonMessages = new List<string>();
+        var letterFlags = new List<string>();
+        var followUpCodes = new List<string>();
         var ruleTrace = new List<RuleExecutionTrace>();
         var stageTrace = new List<StageExecutionTrace>();
         
@@ -1009,6 +999,7 @@ public class ApiController : ControllerBase
                     Triggered = triggered,
                     ConditionResult = triggered,
                     ActionApplied = triggered ? rule.Action : null,
+                    LetterFlag = triggered ? rule.Action.LetterFlag : null,
                     ExecutionTimeMs = 0
                 };
                 
@@ -1024,6 +1015,15 @@ public class ApiController : ControllerBase
                     if (rule.Category == "validation" && !string.IsNullOrEmpty(action.ReasonMessage))
                         validationErrors.Add(action.ReasonMessage);
                     
+                    if (!string.IsNullOrEmpty(action.LetterFlag))
+                        letterFlags.Add(action.LetterFlag);
+                    if (!string.IsNullOrEmpty(action.ReasonCode))
+                    {
+                        reasonCodes.Add(action.ReasonCode);
+                        if (action.LetterFlag == "L")
+                            followUpCodes.Add(action.ReasonCode);
+                    }
+
                     if (action.Decision == "FAIL")
                     {
                         stpDecision = "FAIL";
@@ -1037,8 +1037,6 @@ public class ApiController : ControllerBase
                     if (action.ScoreImpact.HasValue)
                         scorecardValue += action.ScoreImpact.Value;
                     
-                    if (!string.IsNullOrEmpty(action.ReasonCode))
-                        reasonCodes.Add(action.ReasonCode);
                     if (!string.IsNullOrEmpty(action.ReasonMessage))
                         reasonMessages.Add(action.ReasonMessage);
                     
@@ -1098,6 +1096,8 @@ public class ApiController : ControllerBase
             ValidationErrors = validationErrors,
             ReasonCodes = reasonCodes.Distinct().ToList(),
             ReasonMessages = reasonMessages.Distinct().ToList(),
+            LetterFlags = letterFlags.Distinct().ToList(),
+            FollowUpCodes = followUpCodes.Distinct().ToList(),
             RuleTrace = ruleTrace,
             StageTrace = stageTrace,
             RiskLoading = riskLoading,
@@ -1417,32 +1417,265 @@ public class ApiController : ControllerBase
     
     private Dictionary<string, object?> GetProposalDict(ProposalData proposal)
     {
+        // ---- Derived: BMI ----
+        double? bmi = proposal.Bmi;
+        if (!bmi.HasValue && proposal.Height.HasValue && proposal.Weight.HasValue && proposal.Height.Value > 0)
+        {
+            var heightM = proposal.Height.Value / 100.0;
+            bmi = proposal.Weight.Value / (heightM * heightM);
+        }
+
+        // ---- Derived: APE (Annual Premium Equivalent) ----
+        double ape = proposal.Premium;
+        if (!string.IsNullOrEmpty(proposal.PaymentMode))
+        {
+            ape = proposal.PaymentMode.ToLower() switch
+            {
+                "monthly" => proposal.Premium * 12,
+                "quarterly" => proposal.Premium * 4,
+                "half_yearly" or "halfyearly" or "semi_annual" => proposal.Premium * 2,
+                _ => proposal.Premium
+            };
+        }
+
+        // ---- Derived: FSAR (Financial Sum At Risk = total sum assured) ----
+        double fsar = proposal.SumAssured;
+
+        // ---- Derived: Maturity Age ----
+        int maturityAge = proposal.ApplicantAge + proposal.PolicyTerm;
+
+        // ---- Derived: DB Multiple (Death Benefit multiple for ULIP) ----
+        double dbMultiple = proposal.Premium > 0 ? proposal.SumAssured / proposal.Premium : 0;
+
+        // ---- Derived: Online vs Physical mode ----
+        bool isPhysicalOrAmexMode = !string.IsNullOrEmpty(proposal.ModeOfPurchase) &&
+            new[] { "physical", "amex" }.Contains(proposal.ModeOfPurchase.ToLower());
+        bool isOnlineMode = !string.IsNullOrEmpty(proposal.ModeOfPurchase) && !isPhysicalOrAmexMode;
+
+        // ---- Derived: IIB Pass from matrix lookup ----
+        bool iibPass = ComputeIibPass(proposal.IibStatus, proposal.IibIsNegative ?? false);
+
+        // ---- Derived: Ratio fields for financial viability ----
+        double fsarToIncomeRatio = proposal.ApplicantIncome > 0 ? fsar / proposal.ApplicantIncome : 0;
+        double apeToProposerIncomeRatio = proposal.ProposerIncome > 0 ? ape / proposal.ProposerIncome : 0;
+
+        // ---- Derived: Random medical case (STP033A: policy divisible by 200) ----
+        bool isRandomMedicalCase = !proposal.IsMedicalGenerated && proposal.PolicyNumber > 0 && proposal.PolicyNumber % 200 == 0;
+
+        // ---- Derived: FGLI negative status (STP007) ----
+        bool fgliHasNegativeStatus = proposal.FgliPolicyStatuses != null &&
+            proposal.FgliPolicyStatuses.Any(s => _fgliNegativeStatuses.Contains(s.ToUpper()));
+
+        // ---- Derived: Minor build in range (STP005I) ----
+        bool? minorBuildInRange = null;
+        if (proposal.ApplicantAge < 12 && proposal.Height.HasValue && proposal.Weight.HasValue)
+        {
+            minorBuildInRange = IsMinorBuildInRange(
+                proposal.ApplicantGender,
+                proposal.ApplicantAge,
+                proposal.Weight.Value,
+                proposal.Height.Value);
+        }
+
         return new Dictionary<string, object?>
         {
+            // Core fields
             ["proposal_id"] = proposal.ProposalId,
             ["product_code"] = proposal.ProductCode,
             ["product_type"] = proposal.ProductType,
+            ["product_category"] = proposal.ProductCategory,
             ["applicant_age"] = proposal.ApplicantAge,
             ["applicant_gender"] = proposal.ApplicantGender,
             ["applicant_income"] = proposal.ApplicantIncome,
             ["sum_assured"] = proposal.SumAssured,
             ["premium"] = proposal.Premium,
-            ["bmi"] = proposal.Bmi,
+            ["payment_mode"] = proposal.PaymentMode,
+            ["mode_of_purchase"] = proposal.ModeOfPurchase,
+            ["qualification"] = proposal.Qualification,
             ["occupation_code"] = proposal.OccupationCode,
             ["occupation_risk"] = proposal.OccupationRisk,
+            ["occupation_class"] = proposal.OccupationClass,
+            ["is_occupation_hazardous"] = proposal.IsOccupationHazardous,
             ["agent_code"] = proposal.AgentCode,
             ["agent_tier"] = proposal.AgentTier,
             ["pincode"] = proposal.Pincode,
+            ["is_negative_pincode"] = proposal.IsNegativePincode,
+            ["risk_category"] = proposal.RiskCategory,
             ["is_smoker"] = proposal.IsSmoker,
+            ["is_alcoholic"] = proposal.IsAlcoholic,
+            ["is_narcotic"] = proposal.IsNarcotic,
             ["has_medical_history"] = proposal.HasMedicalHistory,
+            ["is_adventurous"] = proposal.IsAdventurous,
             ["existing_coverage"] = proposal.ExistingCoverage,
+            ["aml_category"] = proposal.AmlCategory,
+            ["policy_term"] = proposal.PolicyTerm,
+            ["premium_payment_term"] = proposal.PremiumPaymentTerm,
+            ["proposer_income"] = proposal.ProposerIncome,
+            // Height/Weight (raw inputs)
+            ["height"] = proposal.Height,
+            ["weight"] = proposal.Weight,
+            // Habits details
             ["cigarettes_per_day"] = proposal.CigarettesPerDay,
             ["smoking_years"] = proposal.SmokingYears,
+            ["tobacco_quantity"] = proposal.TobaccoQuantity,
+            ["alcohol_type"] = proposal.AlcoholType,
+            ["alcohol_quantity"] = proposal.AlcoholQuantity,
+            ["liquor_type"] = proposal.LiquorType,
+            ["hard_liquor_quantity"] = proposal.HardLiquorQuantity,
+            ["beer_quantity"] = proposal.BeerQuantity,
+            ["wine_quantity"] = proposal.WineQuantity,
             ["ailment_type"] = proposal.AilmentType,
             ["ailment_details"] = proposal.AilmentDetails,
             ["ailment_duration_years"] = proposal.AilmentDurationYears,
-            ["is_ailment_ongoing"] = proposal.IsAilmentOngoing
+            ["is_ailment_ongoing"] = proposal.IsAilmentOngoing,
+            ["has_weight_changed"] = proposal.HasWeightChanged,
+            // IIB data
+            ["iib_status"] = proposal.IibStatus,
+            ["iib_is_negative"] = proposal.IibIsNegative,
+            ["iib_score"] = proposal.IibScore,
+            ["is_la_new_to_iib"] = proposal.IsLaNewToIib,
+            // Relationship fields
+            ["is_la_proposer"] = proposal.IsLaProposer,
+            ["is_proposer_corporate"] = proposal.IsProposerCorporate,
+            ["la_proposer_relation"] = proposal.LaProposerRelation,
+            ["nominee_relation"] = proposal.NomineeRelation,
+            // Product features
+            ["has_term_rider"] = proposal.HasTermRider,
+            // Residential status
+            ["nationality"] = proposal.Nationality,
+            ["residential_country"] = proposal.ResidentialCountry,
+            ["business_country"] = proposal.BusinessCountry,
+            // Family history
+            ["family_medical_history_2_or_more"] = proposal.FamilyMedicalHistory2OrMore,
+            // Personal status
+            ["marital_status"] = proposal.MaritalStatus,
+            ["is_pep"] = proposal.IsPep,
+            ["is_criminally_convicted"] = proposal.IsCriminallyConvicted,
+            ["is_ofac"] = proposal.IsOfac,
+            // Pregnancy
+            ["is_pregnant"] = proposal.IsPregnant,
+            ["pregnancy_weeks"] = proposal.PregnancyWeeks,
+            // Medical
+            ["is_medical_generated"] = proposal.IsMedicalGenerated,
+            ["policy_number"] = proposal.PolicyNumber,
+            // Special class
+            ["special_class"] = proposal.SpecialClass,
+            // FGLI
+            ["fgli_policy_statuses"] = proposal.FgliPolicyStatuses,
+            // ---- Derived fields ----
+            ["bmi"] = bmi,
+            ["ape"] = ape,
+            ["fsar"] = fsar,
+            ["maturity_age"] = maturityAge,
+            ["db_multiple"] = dbMultiple,
+            ["is_online_mode"] = isOnlineMode,
+            ["is_physical_or_amex_mode"] = isPhysicalOrAmexMode,
+            ["iib_pass"] = iibPass,
+            ["fsar_to_income_ratio"] = fsarToIncomeRatio,
+            ["ape_to_proposer_income_ratio"] = apeToProposerIncomeRatio,
+            ["is_random_medical_case"] = isRandomMedicalCase,
+            ["fgli_has_negative_status"] = fgliHasNegativeStatus,
+            ["minor_build_in_range"] = minorBuildInRange,
         };
+    }
+
+    // IIB statuses that trigger a FAIL when is_negative = true (per STP010 matrix)
+    private static readonly HashSet<string> _iibFailStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "null_and_void",
+        "proposal_declined",
+        "risk_postponed",
+        "death_claim_intimated",
+        "death_claim_settled",
+        "death_claim_repudiated",
+        "joint_life_first_death",
+    };
+
+    private static bool ComputeIibPass(string? iibStatus, bool iibIsNegative)
+    {
+        if (string.IsNullOrEmpty(iibStatus)) return true; // No IIB record → pass
+        return !(iibIsNegative && _iibFailStatuses.Contains(iibStatus));
+    }
+
+    // FGLI policy statuses that indicate a negative/declined history (STP007)
+    private static readonly HashSet<string> _fgliNegativeStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CF", "CR", "DC", "DD", "DH", "DI", "FA", "FD", "HC", "HP",
+        "MD", "MR", "PO", "RC", "RD", "TM"
+    };
+
+    // Minor build (height/weight) range check for children under 12 (STP005I)
+    // Based on standard growth ranges; returns true if build is within acceptable range.
+    private static bool IsMinorBuildInRange(string gender, int ageYears, double weightKg, double heightCm)
+    {
+        // Simplified WHO-aligned growth ranges by age band (0-11 years) and gender
+        // Each entry: (minAge, maxAge, minWeightKg, maxWeightKg, minHeightCm, maxHeightCm)
+        var maleRanges = new (double minAge, double maxAge, double minW, double maxW, double minH, double maxH)[]
+        {
+            (0, 0.6, 2.5, 4.5, 46, 53.5),
+            (0.7, 1, 6, 10, 37, 72),
+            (1.1, 1.6, 7.5, 12, 71, 80),
+            (1.7, 2, 8.5, 13.5, 77, 87),
+            (2.1, 2.6, 9.5, 15, 82, 94),
+            (2.7, 3, 10.5, 16.5, 85, 98),
+            (3.1, 3.6, 11.5, 18, 89, 103),
+            (3.7, 4, 12, 19, 92, 106),
+            (4.1, 4.6, 12.5, 21, 95.5, 111),
+            (4.7, 5, 13, 23, 97, 115),
+            (5.1, 5.6, 13.5, 24.5, 100, 118.5),
+            (5.7, 6, 14, 26, 102, 122.5),
+            (6.1, 6.6, 14.5, 28, 104, 126),
+            (6.7, 7, 15.5, 31, 105.5, 129.5),
+            (7.1, 7.6, 16, 33.5, 109, 132.5),
+            (7.7, 8, 16.5, 36, 112, 135.5),
+            (8.1, 8.6, 17.5, 39.5, 114, 139),
+            (8.7, 9, 18.5, 42, 116, 142),
+            (9.1, 9.6, 19, 45.5, 119, 145.5),
+            (9.7, 10, 20, 48.5, 121, 148.5),
+            (10.1, 10.6, 21, 51.5, 123.5, 151.5),
+            (10.7, 11, 21.5, 55, 126, 154.5),
+            (11.1, 11.6, 22.5, 58, 128, 157),
+            (11.7, 12, 24, 62, 130.5, 160.5),
+        };
+        var femaleRanges = new (double minAge, double maxAge, double minW, double maxW, double minH, double maxH)[]
+        {
+            (0, 0.6, 2.3, 4, 46, 53),
+            (0.7, 1, 5.5, 9.5, 61, 70),
+            (1.1, 1.6, 7, 11.5, 69, 79),
+            (1.7, 2, 8, 13, 75, 86),
+            (2.1, 2.6, 9, 14.5, 80, 92.5),
+            (2.7, 3, 10, 16.2, 84, 97.5),
+            (3.1, 3.6, 11, 17, 85.5, 102),
+            (3.7, 4, 11.5, 19, 91, 107),
+            (4.1, 4.6, 12.5, 21, 95, 111),
+            (4.7, 5, 12.8, 23, 96.5, 115),
+            (5.1, 5.6, 13, 25, 97.5, 118),
+            (5.7, 6, 13.2, 27, 100.5, 122),
+            (6.1, 6.6, 13.8, 29, 102, 125.5),
+            (6.7, 7, 14, 31, 105, 128.5),
+            (7.1, 7.6, 15, 33, 107, 132),
+            (7.7, 8, 16, 36, 110, 135),
+            (8.1, 8.6, 16.5, 38, 112.5, 138),
+            (8.7, 9, 17.2, 41, 115, 141),
+            (9.1, 9.6, 18.2, 43, 117.5, 144.5),
+            (9.7, 10, 19, 46, 120.5, 148.5),
+            (10.1, 10.6, 20.8, 49, 123.5, 151),
+            (10.7, 11, 22, 52.5, 126, 154),
+            (11.1, 11.6, 23, 56, 129, 157),
+            (11.7, 12, 25, 59, 131.5, 160),
+        };
+
+        var ranges = gender?.ToUpper() == "F" ? femaleRanges : maleRanges;
+        double age = ageYears; // Use integer age for simplicity
+        foreach (var r in ranges)
+        {
+            if (age >= r.minAge && age <= r.maxAge)
+            {
+                return weightKg >= r.minW && weightKg <= r.maxW &&
+                       heightCm >= r.minH && heightCm <= r.maxH;
+            }
+        }
+        return true; // No matching range found → assume in range
     }
     
     private object? GetFieldValue(Dictionary<string, object?> data, string field)
