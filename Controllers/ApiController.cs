@@ -1605,77 +1605,53 @@ public class ApiController : ControllerBase
     };
 
     // Minor build (height/weight) range check for children under 12 (STP005I)
-    // Based on standard growth ranges; returns true if build is within acceptable range.
+    // Returns true if build is within acceptable range; false if outside.
+    // Integer year boundaries used since ApplicantAge is stored as whole years.
+    private static readonly (int minAge, int maxAge, double minW, double maxW, double minH, double maxH)[] _maleBuildRanges =
+    {
+        (0,  0,  2.5,  6.5, 46,  60),
+        (1,  1,  7.0, 12.0, 69,  80),
+        (2,  2,  9.5, 15.0, 81,  95),
+        (3,  3, 11.0, 18.0, 89, 103),
+        (4,  4, 12.5, 21.5, 95, 110),
+        (5,  5, 14.0, 25.5, 99, 119),
+        (6,  6, 15.0, 29.0,103, 126),
+        (7,  7, 16.5, 33.0,109, 133),
+        (8,  8, 18.0, 38.0,114, 137),
+        (9,  9, 19.5, 45.5,119, 146),
+        (10,10, 21.0, 51.5,123, 153),
+        (11,11, 23.0, 58.0,128, 158),
+    };
+
+    private static readonly (int minAge, int maxAge, double minW, double maxW, double minH, double maxH)[] _femaleBuildRanges =
+    {
+        (0,  0,  2.3,  6.0, 46,  58),
+        (1,  1,  6.5, 11.5, 68,  79),
+        (2,  2,  9.0, 14.5, 80,  94),
+        (3,  3, 10.5, 17.5, 87, 103),
+        (4,  4, 12.0, 21.0, 94, 111),
+        (5,  5, 13.5, 24.5, 97, 116),
+        (6,  6, 14.5, 28.5,100, 123),
+        (7,  7, 15.5, 32.0,105, 129),
+        (8,  8, 17.0, 36.5,109, 135),
+        (9,  9, 19.0, 43.5,116, 143),
+        (10,10, 21.5, 49.5,123, 150),
+        (11,11, 24.0, 57.0,128, 157),
+    };
+
     private static bool IsMinorBuildInRange(string gender, int ageYears, double weightKg, double heightCm)
     {
-        // Simplified WHO-aligned growth ranges by age band (0-11 years) and gender
-        // Each entry: (minAge, maxAge, minWeightKg, maxWeightKg, minHeightCm, maxHeightCm)
-        var maleRanges = new (double minAge, double maxAge, double minW, double maxW, double minH, double maxH)[]
-        {
-            (0, 0.6, 2.5, 4.5, 46, 53.5),
-            (0.7, 1, 6, 10, 37, 72),
-            (1.1, 1.6, 7.5, 12, 71, 80),
-            (1.7, 2, 8.5, 13.5, 77, 87),
-            (2.1, 2.6, 9.5, 15, 82, 94),
-            (2.7, 3, 10.5, 16.5, 85, 98),
-            (3.1, 3.6, 11.5, 18, 89, 103),
-            (3.7, 4, 12, 19, 92, 106),
-            (4.1, 4.6, 12.5, 21, 95.5, 111),
-            (4.7, 5, 13, 23, 97, 115),
-            (5.1, 5.6, 13.5, 24.5, 100, 118.5),
-            (5.7, 6, 14, 26, 102, 122.5),
-            (6.1, 6.6, 14.5, 28, 104, 126),
-            (6.7, 7, 15.5, 31, 105.5, 129.5),
-            (7.1, 7.6, 16, 33.5, 109, 132.5),
-            (7.7, 8, 16.5, 36, 112, 135.5),
-            (8.1, 8.6, 17.5, 39.5, 114, 139),
-            (8.7, 9, 18.5, 42, 116, 142),
-            (9.1, 9.6, 19, 45.5, 119, 145.5),
-            (9.7, 10, 20, 48.5, 121, 148.5),
-            (10.1, 10.6, 21, 51.5, 123.5, 151.5),
-            (10.7, 11, 21.5, 55, 126, 154.5),
-            (11.1, 11.6, 22.5, 58, 128, 157),
-            (11.7, 12, 24, 62, 130.5, 160.5),
-        };
-        var femaleRanges = new (double minAge, double maxAge, double minW, double maxW, double minH, double maxH)[]
-        {
-            (0, 0.6, 2.3, 4, 46, 53),
-            (0.7, 1, 5.5, 9.5, 61, 70),
-            (1.1, 1.6, 7, 11.5, 69, 79),
-            (1.7, 2, 8, 13, 75, 86),
-            (2.1, 2.6, 9, 14.5, 80, 92.5),
-            (2.7, 3, 10, 16.2, 84, 97.5),
-            (3.1, 3.6, 11, 17, 85.5, 102),
-            (3.7, 4, 11.5, 19, 91, 107),
-            (4.1, 4.6, 12.5, 21, 95, 111),
-            (4.7, 5, 12.8, 23, 96.5, 115),
-            (5.1, 5.6, 13, 25, 97.5, 118),
-            (5.7, 6, 13.2, 27, 100.5, 122),
-            (6.1, 6.6, 13.8, 29, 102, 125.5),
-            (6.7, 7, 14, 31, 105, 128.5),
-            (7.1, 7.6, 15, 33, 107, 132),
-            (7.7, 8, 16, 36, 110, 135),
-            (8.1, 8.6, 16.5, 38, 112.5, 138),
-            (8.7, 9, 17.2, 41, 115, 141),
-            (9.1, 9.6, 18.2, 43, 117.5, 144.5),
-            (9.7, 10, 19, 46, 120.5, 148.5),
-            (10.1, 10.6, 20.8, 49, 123.5, 151),
-            (10.7, 11, 22, 52.5, 126, 154),
-            (11.1, 11.6, 23, 56, 129, 157),
-            (11.7, 12, 25, 59, 131.5, 160),
-        };
-
-        var ranges = gender?.ToUpper() == "F" ? femaleRanges : maleRanges;
-        double age = ageYears; // Use integer age for simplicity
+        var ranges = gender?.ToUpper() == "F" ? _femaleBuildRanges : _maleBuildRanges;
         foreach (var r in ranges)
         {
-            if (age >= r.minAge && age <= r.maxAge)
+            if (ageYears >= r.minAge && ageYears <= r.maxAge)
             {
                 return weightKg >= r.minW && weightKg <= r.maxW &&
                        heightCm >= r.minH && heightCm <= r.maxH;
             }
         }
-        return true; // No matching range found → assume in range
+        // Age not covered by the table - flag as outside range to require review
+        return false;
     }
     
     private object? GetFieldValue(Dictionary<string, object?> data, string field)

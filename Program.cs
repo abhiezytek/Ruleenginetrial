@@ -159,11 +159,12 @@ using (var scope = app.Services.CreateScope())
                 performed_at TEXT               
             )");
 
-        // Add new columns to evaluations table if they don't exist (for existing DBs)
+        // Add new columns to evaluations table if they don't exist (for existing DBs created before these columns were added)
+        var dbLogger = app.Logger;
         try { context.Database.ExecuteSqlRaw("ALTER TABLE evaluations ADD COLUMN letter_flags TEXT DEFAULT '[]'"); }
-        catch { /* Column already exists */ }
+        catch (Exception ex) { dbLogger.LogDebug("ALTER TABLE evaluations letter_flags: {Msg} (expected if column exists)", ex.Message); }
         try { context.Database.ExecuteSqlRaw("ALTER TABLE evaluations ADD COLUMN follow_up_codes TEXT DEFAULT '[]'"); }
-        catch { /* Column already exists */ }
+        catch (Exception ex) { dbLogger.LogDebug("ALTER TABLE evaluations follow_up_codes: {Msg} (expected if column exists)", ex.Message); }
     }
     catch (Exception ex)
     {

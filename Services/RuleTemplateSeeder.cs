@@ -23,10 +23,10 @@ public static class RuleTemplateSeeder
 
     public static List<RuleTemplate> GetSTPTemplates()
     {
-        var allProducts = "[\"term_life\",\"term_pure\",\"term_returns\",\"endowment\",\"ulip\",\"health\"]";
-        var lifeProducts = "[\"term_life\",\"term_pure\",\"term_returns\"]";
-        var allLifeEndowment = "[\"term_life\",\"term_pure\",\"term_returns\",\"endowment\",\"ulip\"]";
-        var healthProducts = "[\"health\"]";
+        var allProducts = JsonSerializer.Serialize(new[] { "term_life", "term_pure", "term_returns", "endowment", "ulip", "health" });
+        var lifeProducts = JsonSerializer.Serialize(new[] { "term_life", "term_pure", "term_returns" });
+        var allLifeEndowment = JsonSerializer.Serialize(new[] { "term_life", "term_pure", "term_returns", "endowment", "ulip" });
+        var healthProducts = JsonSerializer.Serialize(new[] { "health" });
 
         return new List<RuleTemplate>
         {
