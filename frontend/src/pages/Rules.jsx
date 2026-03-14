@@ -208,7 +208,7 @@ export default function Rules() {
                           title={rule.enabled ? 'Disable rule' : 'Enable rule'}
                         >
                           {rule.enabled ? (
-                            <ToggleRight className="w-7 h-7 text-teal-500" />
+                            <ToggleRight className="w-7 h-7 text-blue-500" />
                           ) : (
                             <ToggleLeft className="w-7 h-7 text-gray-300" />
                           )}

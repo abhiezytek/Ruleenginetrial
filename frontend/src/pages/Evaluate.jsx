@@ -556,7 +556,7 @@ export default function Evaluate() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Evaluate Proposal</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Submit a proposal to the STP Rule Engine for automated underwriting decision.
+          Submit a proposal to the AccuRule Engine for automated underwriting decision.
         </p>
       </div>
 

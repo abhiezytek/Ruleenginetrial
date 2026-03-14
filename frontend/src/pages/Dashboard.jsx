@@ -62,7 +62,7 @@ export default function Dashboard() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Insurance STP Rule Engine — Overview
+          AccuRule — Insurance Rule Engine Overview
         </p>
       </div>
 
@@ -99,7 +99,7 @@ export default function Dashboard() {
             icon={ClipboardList}
             label="Evaluations"
             value={totalEvals}
-            color="bg-teal-500"
+            color="bg-blue-500"
             sub="total processed"
           />
           <StatCard

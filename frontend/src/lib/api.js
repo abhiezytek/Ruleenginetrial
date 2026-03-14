@@ -7,12 +7,34 @@ const client = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Attach JWT token to every request
+client.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accurule_token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
+
 client.interceptors.response.use(
   (res) => res.data,
-  (err) => Promise.reject(err.response?.data || err.message || err)
+  (err) => {
+    // On 401, clear stored credentials and redirect to login
+    if (err.response?.status === 401) {
+      localStorage.removeItem('accurule_token');
+      localStorage.removeItem('accurule_user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(err.response?.data || err.message || err);
+  }
 );
 
 export const api = {
+  // Auth
+  login: (credentials) => client.post('/api/auth/login', credentials),
+  getMe: () => client.get('/api/auth/me'),
+
+  // Rules
   health: () => client.get('/api/health'),
   getRules: () => client.get('/api/rules'),
   getRule: (id) => client.get(`/api/rules/${id}`),
