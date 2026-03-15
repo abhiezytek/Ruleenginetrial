@@ -20,13 +20,13 @@ const navItems = [
   { to: '/templates', label: 'Templates', icon: FileText },
 ];
 
-// AccuRule brand — "Accu" red, "Rule" blue
-function AccuRuleLogo({ size = 'sm' }) {
+// Criterion brand logo
+function CriterionLogo({ size = 'sm' }) {
   const cls = size === 'md' ? 'text-lg font-extrabold' : 'text-sm font-bold';
   return (
     <span className={cls} style={{ letterSpacing: '-0.01em' }}>
-      <span className="text-red-500">Accu</span>
-      <span className="text-blue-400">Rule</span>
+      <span className="text-red-500">Crite</span>
+      <span className="text-blue-400">rion</span>
     </span>
   );
 }
@@ -60,15 +60,15 @@ export default function Layout({ user, onLogout }) {
       >
         {/* Brand */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-700">
-          {/* AccuRule icon — "A" in split gradient circle */}
+          {/* Criterion icon — "C" in split gradient circle */}
           <div
             className="flex items-center justify-center w-9 h-9 rounded-lg text-white font-extrabold text-base shrink-0"
             style={{ background: 'linear-gradient(135deg, #dc2626 0%, #2563eb 100%)' }}
           >
-            A
+            C
           </div>
           <div>
-            <AccuRuleLogo size="md" />
+            <CriterionLogo size="md" />
             <div className="text-slate-400 text-xs">Insurance Rule Engine</div>
           </div>
           <button
@@ -103,7 +103,7 @@ export default function Layout({ user, onLogout }) {
 
         {/* Footer */}
         <div className="px-5 py-4 border-t border-slate-700">
-          <div className="text-slate-500 text-xs">v1.0 · AccuRule</div>
+          <div className="text-slate-500 text-xs">v1.0 · Criterion</div>
         </div>
       </aside>
 
@@ -130,11 +130,11 @@ export default function Layout({ user, onLogout }) {
               className="flex items-center justify-center w-6 h-6 rounded text-white font-extrabold text-xs"
               style={{ background: 'linear-gradient(135deg, #dc2626 0%, #2563eb 100%)' }}
             >
-              A
+              C
             </div>
             <span className="font-semibold text-sm">
-              <span className="text-red-600">Accu</span>
-              <span className="text-blue-600">Rule</span>
+              <span className="text-red-600">Crite</span>
+              <span className="text-blue-600">rion</span>
             </span>
           </div>
 

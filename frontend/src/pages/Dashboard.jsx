@@ -62,7 +62,7 @@ export default function Dashboard() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-sm text-gray-500 mt-1">
-          AccuRule — Insurance Rule Engine Overview
+          Criterion — Insurance Rule Engine Overview
         </p>
       </div>
 
