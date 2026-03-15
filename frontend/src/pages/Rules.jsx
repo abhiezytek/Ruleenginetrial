@@ -58,10 +58,10 @@ export default function Rules() {
     const id = rule.id ?? rule.rule_id;
     setTogglingId(id);
     try {
-      await api.toggleRule(id, !rule.enabled);
+      await api.toggleRule(id);
       setRules((prev) =>
         prev.map((r) =>
-          (r.id ?? r.rule_id) === id ? { ...r, enabled: !r.enabled } : r
+          (r.id ?? r.rule_id) === id ? { ...r, is_enabled: !r.is_enabled } : r
         )
       );
     } catch (e) {
@@ -158,10 +158,10 @@ export default function Rules() {
               <tbody className="divide-y divide-gray-100">
                 {filtered.map((rule) => {
                   const id = rule.id ?? rule.rule_id;
-                  const products = Array.isArray(rule.applicable_products)
-                    ? rule.applicable_products
-                    : typeof rule.applicable_products === 'string'
-                    ? rule.applicable_products.split(',').map((p) => p.trim())
+                  const products = Array.isArray(rule.products)
+                    ? rule.products.filter(Boolean)
+                    : typeof rule.products === 'string' && rule.products
+                    ? rule.products.split(',').map((p) => p.trim()).filter(Boolean)
                     : [];
                   return (
                     <tr key={id} className="hover:bg-gray-50">
@@ -189,9 +189,9 @@ export default function Rules() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        {rule.letter_flag === 'O' ? (
+                        {rule.action?.letter_flag === 'O' ? (
                           <span className="badge-o">O</span>
-                        ) : rule.letter_flag === 'L' ? (
+                        ) : rule.action?.letter_flag === 'L' ? (
                           <span className="badge-l">L</span>
                         ) : (
                           <span className="text-gray-400 text-xs">—</span>
@@ -205,9 +205,9 @@ export default function Rules() {
                           onClick={() => handleToggle(rule)}
                           disabled={togglingId === id}
                           className="inline-flex items-center transition-colors disabled:opacity-40"
-                          title={rule.enabled ? 'Disable rule' : 'Enable rule'}
+                          title={rule.is_enabled ? 'Disable rule' : 'Enable rule'}
                         >
-                          {rule.enabled ? (
+                          {rule.is_enabled ? (
                             <ToggleRight className="w-7 h-7 text-blue-500" />
                           ) : (
                             <ToggleLeft className="w-7 h-7 text-gray-300" />
