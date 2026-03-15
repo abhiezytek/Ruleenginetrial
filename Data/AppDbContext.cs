@@ -139,6 +139,8 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Evaluation>().Property(e => e.ReasonCodesJson).HasColumnName("reason_codes");
         modelBuilder.Entity<Evaluation>().Property(e => e.ReasonMessagesJson).HasColumnName("reason_messages");
         modelBuilder.Entity<Evaluation>().Property(e => e.RuleTraceJson).HasColumnName("rule_trace");
+        modelBuilder.Entity<Evaluation>().Property(e => e.LetterFlagsJson).HasColumnName("letter_flags");
+        modelBuilder.Entity<Evaluation>().Property(e => e.FollowUpCodesJson).HasColumnName("follow_up_codes");
         modelBuilder.Entity<Evaluation>().Property(e => e.EvaluationTimeMs).HasColumnName("evaluation_time_ms");
         modelBuilder.Entity<Evaluation>().Property(e => e.EvaluatedAt).HasColumnName("evaluated_at");
         modelBuilder.Entity<Evaluation>().HasIndex(e => e.StpDecision);

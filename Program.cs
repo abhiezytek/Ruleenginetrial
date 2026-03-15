@@ -158,6 +158,13 @@ using (var scope = app.Services.CreateScope())
                 performed_by TEXT NOT NULL,
                 performed_at TEXT               
             )");
+
+        // Add new columns to evaluations table if they don't exist (for existing DBs created before these columns were added)
+        var dbLogger = app.Logger;
+        try { context.Database.ExecuteSqlRaw("ALTER TABLE evaluations ADD COLUMN letter_flags TEXT DEFAULT '[]'"); }
+        catch (Exception ex) { dbLogger.LogDebug("ALTER TABLE evaluations letter_flags: {Msg} (expected if column exists)", ex.Message); }
+        try { context.Database.ExecuteSqlRaw("ALTER TABLE evaluations ADD COLUMN follow_up_codes TEXT DEFAULT '[]'"); }
+        catch (Exception ex) { dbLogger.LogDebug("ALTER TABLE evaluations follow_up_codes: {Msg} (expected if column exists)", ex.Message); }
     }
     catch (Exception ex)
     {
@@ -169,6 +176,9 @@ using (var scope = app.Services.CreateScope())
 
     // Seed rule templates
     RuleTemplateSeeder.SeedTemplates(context);
+
+    // Create rules from templates (idempotent - only adds new rules)
+    RuleTemplateSeeder.SeedRulesFromTemplates(context);
 }
 
 // Run on port 8001

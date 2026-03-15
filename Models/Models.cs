@@ -300,6 +300,14 @@ public class Evaluation
     [Column(TypeName = "TEXT")]
     public string RuleTraceJson { get; set; } = "[]";
 
+    // Letter flags triggered (O = RUW referral, L = requirement letter)
+    [Column(TypeName = "TEXT")]
+    public string LetterFlagsJson { get; set; } = "[]";
+
+    // Follow-up requirement codes from L-flagged rules (MPN, MCE, TGQ, etc.)
+    [Column(TypeName = "TEXT")]
+    public string FollowUpCodesJson { get; set; } = "[]";
+
     public double EvaluationTimeMs { get; set; } = 0;
 
     public string EvaluatedAt { get; set; } = DateTime.UtcNow.ToString("o");
@@ -387,6 +395,8 @@ public class RuleAction
     public string? ReasonCode { get; set; }
     public string? ReasonMessage { get; set; }
     public bool IsHardStop { get; set; } = false;
+    // Letter flag: "O" = refer to underwriter, "L" = letter/requirement triggered
+    public string? LetterFlag { get; set; }
 }
 
 public class ScorecardParameter
@@ -419,37 +429,95 @@ public class ProposalData
     public string ProposalId { get; set; } = string.Empty;
     public string ProductCode { get; set; } = string.Empty;
     public string ProductType { get; set; } = "term_life";
+    // Product category: "life", "health", "savings", "investment"
+    public string? ProductCategory { get; set; }
     public int ApplicantAge { get; set; }
     public string ApplicantGender { get; set; } = "M";
     public double ApplicantIncome { get; set; }
     public double SumAssured { get; set; }
     public double Premium { get; set; }
     public string? PaymentMode { get; set; }
+    // Mode of purchase: "Physical", "Amex", or online modes
+    public string? ModeOfPurchase { get; set; }
     public double? Bmi { get; set; }
     public double? Height { get; set; }
     public double? Weight { get; set; }
     public string? Qualification { get; set; }
     public string? OccupationCode { get; set; }
     public string? OccupationRisk { get; set; }
+    // Occupation class: "class_1", "class_2", "class_3", "class_4"
+    public string? OccupationClass { get; set; }
+    public bool IsOccupationHazardous { get; set; } = false;
     public string? AgentCode { get; set; }
     public string? AgentTier { get; set; }
     public string? Pincode { get; set; }
+    public bool IsNegativePincode { get; set; } = false;
+    // Risk category: "low", "medium", "high"
+    public string? RiskCategory { get; set; }
     public bool IsSmoker { get; set; } = false;
     public bool IsAlcoholic { get; set; } = false;
     public bool IsNarcotic { get; set; } = false;
     public bool HasMedicalHistory { get; set; } = false;
     public bool IsAdventurous { get; set; } = false;
     public double ExistingCoverage { get; set; } = 0;
-    // Conditional fields for dependent rules
+    // AML category: "low", "medium", "high"
+    public string? AmlCategory { get; set; }
+    // Policy terms
+    public int PolicyTerm { get; set; } = 0;
+    public int PremiumPaymentTerm { get; set; } = 0;
+    // Proposer income (for APE vs proposer income check STP019F)
+    public double ProposerIncome { get; set; } = 0;
+    // Habits details
     public int? CigarettesPerDay { get; set; }
     public int? SmokingYears { get; set; }
-
+    // Tobacco quantity for online mode check (STP008C)
+    public int? TobaccoQuantity { get; set; }
     public string? AlcoholType { get; set; }
     public int? AlcoholQuantity { get; set; }
+    // Liquor type: 1 = single type, 2 = multiple types (STP008D/F)
+    public int? LiquorType { get; set; }
+    public int? HardLiquorQuantity { get; set; } // ml per week
+    public double? BeerQuantity { get; set; } // cans/glasses per week
+    public double? WineQuantity { get; set; } // glasses per week
     public string? AilmentType { get; set; }
     public string? AilmentDetails { get; set; }
     public int? AilmentDurationYears { get; set; }
     public bool? IsAilmentOngoing { get; set; }
+    // Weight change (STP013)
+    public bool HasWeightChanged { get; set; } = false;
+    // IIB data (STP010, STP011)
+    public string? IibStatus { get; set; }
+    public bool? IibIsNegative { get; set; }
+    public int? IibScore { get; set; }
+    public bool? IsLaNewToIib { get; set; }
+    // LA-Proposer relationship (STP012)
+    public bool IsLaProposer { get; set; } = true;
+    public bool IsProposerCorporate { get; set; } = false;
+    public string? LaProposerRelation { get; set; }
+    public string? NomineeRelation { get; set; }
+    // Product features (STP016)
+    public bool HasTermRider { get; set; } = false;
+    // Residential status (STP024)
+    public string? Nationality { get; set; } // "Indian", "NRI", "PIO", "OCI", "FN"
+    public string? ResidentialCountry { get; set; } // "India", "Standard", "Substandard"
+    public string? BusinessCountry { get; set; }
+    // Family history (STP028)
+    public bool FamilyMedicalHistory2OrMore { get; set; } = false;
+    // Personal status (STP029, STP031)
+    public string? MaritalStatus { get; set; } // "S"=single, "M"=married, "W"=widow, "D"=divorced
+    public bool IsPep { get; set; } = false;
+    public bool IsCriminallyConvicted { get; set; } = false;
+    public bool IsOfac { get; set; } = false;
+    // Pregnancy (STP032)
+    public bool IsPregnant { get; set; } = false;
+    public int? PregnancyWeeks { get; set; }
+    // Medical (STP033, STP035)
+    public bool IsMedicalGenerated { get; set; } = false;
+    public int PolicyNumber { get; set; } = 0;
+    // Special class (STP034): "HUF", "MWP", "employer_employee", "keyman"
+    public string? SpecialClass { get; set; }
+    // FGLI previous policy statuses (STP007)
+    public List<string>? FgliPolicyStatuses { get; set; }
 }
 
 public class RuleExecutionTrace
@@ -462,6 +530,8 @@ public class RuleExecutionTrace
     public bool ConditionResult { get; set; }
     public RuleAction? ActionApplied { get; set; }
     public double ExecutionTimeMs { get; set; }
+    // Letter flag from the triggered action
+    public string? LetterFlag { get; set; }
 }
 
 public class EvaluationResult
@@ -476,6 +546,10 @@ public class EvaluationResult
     public List<string> ValidationErrors { get; set; } = new();
     public List<string> ReasonCodes { get; set; } = new();
     public List<string> ReasonMessages { get; set; } = new();
+    // Letter flags (O = RUW referral, L = requirement letter)
+    public List<string> LetterFlags { get; set; } = new();
+    // Follow-up requirement codes from L-flagged rules
+    public List<string> FollowUpCodes { get; set; } = new();
     public List<RuleExecutionTrace> RuleTrace { get; set; } = new();
     public List<StageExecutionTrace> StageTrace { get; set; } = new();
     public RiskLoadingResult? RiskLoading { get; set; }
