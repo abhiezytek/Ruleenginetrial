@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 
-// AccuRule brand component — "Accu" red, "Rule" blue
-function AccuRuleBrand({ size = 'lg' }) {
+// Criterion brand component — "Crite" red, "rion" blue
+function CriterionBrand({ size = 'lg' }) {
   const cls =
     size === 'xl'
       ? 'text-4xl font-extrabold tracking-tight'
@@ -12,8 +12,8 @@ function AccuRuleBrand({ size = 'lg' }) {
       : 'text-base font-bold';
   return (
     <span className={cls}>
-      <span className="text-red-600">Accu</span>
-      <span className="text-blue-600">Rule</span>
+      <span className="text-red-600">Crite</span>
+      <span className="text-blue-600">rion</span>
     </span>
   );
 }
@@ -148,8 +148,8 @@ export default function Login({ onLogin }) {
       // data is the axios-interceptor-unwrapped response body
       const token = data?.access_token ?? data?.accessToken ?? '';
       const user = data?.user ?? { username: username.trim() };
-      localStorage.setItem('accurule_token', token);
-      localStorage.setItem('accurule_user', JSON.stringify(user));
+      localStorage.setItem('criterion_token', token);
+      localStorage.setItem('criterion_user', JSON.stringify(user));
       onLogin(user);
       navigate('/', { replace: true });
     } catch (err) {
@@ -181,8 +181,8 @@ export default function Login({ onLogin }) {
           <div className="px-8 pt-8 pb-9">
             {/* Brand */}
             <div className="text-center mb-6">
-              <AccuRuleBrand size="xl" />
-              <p className="text-gray-500 text-sm mt-1">Accurate Insurance Rule Engine</p>
+              <CriterionBrand size="xl" />
+              <p className="text-gray-500 text-sm mt-1">Intelligent Insurance Rule Engine</p>
             </div>
 
             {/* Error */}

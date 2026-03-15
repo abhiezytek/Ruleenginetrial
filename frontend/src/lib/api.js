@@ -9,7 +9,7 @@ const client = axios.create({
 
 // Attach JWT token to every request
 client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accurule_token');
+  const token = localStorage.getItem('criterion_token') || localStorage.getItem('accurule_token');
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`;
   }
@@ -21,6 +21,8 @@ client.interceptors.response.use(
   (err) => {
     // On 401, clear stored credentials and redirect to login
     if (err.response?.status === 401) {
+      localStorage.removeItem('criterion_token');
+      localStorage.removeItem('criterion_user');
       localStorage.removeItem('accurule_token');
       localStorage.removeItem('accurule_user');
       window.location.href = '/login';

@@ -8,10 +8,24 @@ import EvaluationHistory from './pages/EvaluationHistory';
 import Rules from './pages/Rules';
 import Templates from './pages/Templates';
 
+// Migrate legacy localStorage keys from the old "AccuRule" name to "Criterion"
+function migrateLocalStorage() {
+  if (!localStorage.getItem('criterion_token') && localStorage.getItem('accurule_token')) {
+    localStorage.setItem('criterion_token', localStorage.getItem('accurule_token'));
+    localStorage.removeItem('accurule_token');
+  }
+  if (!localStorage.getItem('criterion_user') && localStorage.getItem('accurule_user')) {
+    localStorage.setItem('criterion_user', localStorage.getItem('accurule_user'));
+    localStorage.removeItem('accurule_user');
+  }
+}
+
+migrateLocalStorage();
+
 function App() {
   const [user, setUser] = useState(() => {
     try {
-      const stored = localStorage.getItem('accurule_user');
+      const stored = localStorage.getItem('criterion_user');
       return stored ? JSON.parse(stored) : null;
     } catch {
       return null;
@@ -21,8 +35,8 @@ function App() {
   const handleLogin = (u) => setUser(u);
 
   const handleLogout = () => {
-    localStorage.removeItem('accurule_token');
-    localStorage.removeItem('accurule_user');
+    localStorage.removeItem('criterion_token');
+    localStorage.removeItem('criterion_user');
     setUser(null);
   };
 
