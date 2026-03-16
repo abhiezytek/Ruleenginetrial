@@ -1733,29 +1733,47 @@ public static class RuleTemplateSeeder
     {
         var templates = context.RuleTemplates.Where(t => t.IsActive).ToList();
 
-        var existingRuleNames = context.Rules
-            .Select(r => r.Name)
-            .ToHashSet();
+        var existingRulesByName = context.Rules
+            .ToDictionary(r => r.Name, r => r);
 
-        var newRules = templates
-            .Where(t => !existingRuleNames.Contains(t.Name))
-            .Select(t => new Rule
+        var newRules = new List<Rule>();
+        var updatedAny = false;
+
+        foreach (var t in templates)
+        {
+            if (existingRulesByName.TryGetValue(t.Name, out var existing))
             {
-                Name = t.Name,
-                Description = t.Description,
-                Category = t.Category,
-                StageId = null,
-                ConditionGroupJson = t.ConditionGroupJson,
-                ActionJson = t.ActionJson,
-                Priority = t.Priority,
-                IsEnabled = true,
-                ProductsJson = t.ProductsJson
-            })
-            .ToList();
+                // Rule exists — restore it if it was disabled so the full set stays active
+                if (!existing.IsEnabled)
+                {
+                    existing.IsEnabled = true;
+                    updatedAny = true;
+                }
+            }
+            else
+            {
+                newRules.Add(new Rule
+                {
+                    Name = t.Name,
+                    Description = t.Description,
+                    Category = t.Category,
+                    StageId = null,
+                    ConditionGroupJson = t.ConditionGroupJson,
+                    ActionJson = t.ActionJson,
+                    Priority = t.Priority,
+                    IsEnabled = true,
+                    ProductsJson = t.ProductsJson
+                });
+            }
+        }
 
         if (newRules.Count > 0)
         {
             context.Rules.AddRange(newRules);
+        }
+
+        if (newRules.Count > 0 || updatedAny)
+        {
             context.SaveChanges();
         }
     }
