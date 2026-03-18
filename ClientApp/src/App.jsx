@@ -3,7 +3,7 @@ export default function App() {
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '2rem' }}>
       <div style={{ maxWidth: 720 }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.75rem' }}>
-          RuleEnginenetrial React ClientApp
+          Ruleenginetrial React ClientApp
         </h1>
         <p style={{ lineHeight: 1.6, marginBottom: '0.5rem' }}>
           This is the minimal Vite + React host that will serve the migrated UI from
