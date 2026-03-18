@@ -572,11 +572,11 @@ export default function Evaluate() {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Evaluate Proposal</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Evaluation Console</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Submit a proposal to the Criterion Engine for automated underwriting decision.
+          Left: enter proposal details · Right: view real-time STP decision and rule trace.
         </p>
       </div>
 
@@ -590,407 +590,429 @@ export default function Evaluate() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-1">
-        {/* Section 1: Basic Info */}
-        <Section title="1 · Basic Info" defaultOpen>
-          <Field label="Proposal ID">
-            <TextInput name="proposal_id" value={form.proposal_id} onChange={handleChange} placeholder="Auto-generated if blank" />
-          </Field>
-          <Field label="Product Type">
-            <SelectInput name="product_type" value={form.product_type} onChange={handleChange}>
-              <option value="term_life">Term Life</option>
-              <option value="endowment">Endowment</option>
-              <option value="ulip">ULIP</option>
-              <option value="health">Health</option>
-            </SelectInput>
-          </Field>
-          <Field label="Product Category">
-            <SelectInput name="product_category" value={form.product_category} onChange={handleChange}>
-              <option value="life">Life</option>
-              <option value="health">Health</option>
-              <option value="savings">Savings</option>
-              <option value="investment">Investment</option>
-            </SelectInput>
-          </Field>
-          <Field label="Product Code">
-            <TextInput name="product_code" value={form.product_code} onChange={handleChange} placeholder="e.g. TL001" />
-          </Field>
-          <Field label="Payment Mode">
-            <SelectInput name="payment_mode" value={form.payment_mode} onChange={handleChange}>
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="half_yearly">Half Yearly</option>
-              <option value="annual">Annual</option>
-            </SelectInput>
-          </Field>
-          <Field label="Mode of Purchase">
-            <SelectInput name="mode_of_purchase" value={form.mode_of_purchase} onChange={handleChange}>
-              <option value="Online">Online</option>
-              <option value="Physical">Physical</option>
-              <option value="Amex">Amex</option>
-            </SelectInput>
-          </Field>
-          <Field label="Policy Term (yrs)">
-            <TextInput name="policy_term" value={form.policy_term} onChange={handleChange} type="number" min={1} max={50} />
-          </Field>
-          <Field label="PPT (yrs)">
-            <TextInput name="premium_payment_term" value={form.premium_payment_term} onChange={handleChange} type="number" min={1} max={50} />
-          </Field>
-          <Field label="Policy Number">
-            <TextInput name="policy_number" value={form.policy_number} onChange={handleChange} type="number" min={0} />
-          </Field>
-        </Section>
-
-        {/* Section 2: Applicant */}
-        <Section title="2 · Applicant Details" defaultOpen>
-          <Field label="Age">
-            <TextInput name="applicant_age" value={form.applicant_age} onChange={handleChange} type="number" min={0} max={100} />
-          </Field>
-          <Field label="Gender">
-            <SelectInput name="applicant_gender" value={form.applicant_gender} onChange={handleChange}>
-              <option value="M">Male</option>
-              <option value="F">Female</option>
-            </SelectInput>
-          </Field>
-          <Field label="Annual Income (₹)">
-            <TextInput name="applicant_income" value={form.applicant_income} onChange={handleChange} type="number" min={0} />
-          </Field>
-          <Field label="Proposer Income (₹)">
-            <TextInput name="proposer_income" value={form.proposer_income} onChange={handleChange} type="number" min={0} />
-          </Field>
-          <Field label="Qualification">
-            <SelectInput name="qualification" value={form.qualification} onChange={handleChange}>
-              {QUALIFICATIONS.map((q) => (
-                <option key={q.value} value={q.value}>{q.label}</option>
-              ))}
-            </SelectInput>
-          </Field>
-          <Field label="Marital Status">
-            <SelectInput name="marital_status" value={form.marital_status} onChange={handleChange}>
-              <option value="S">Single</option>
-              <option value="M">Married</option>
-              <option value="W">Widowed</option>
-              <option value="D">Divorced</option>
-            </SelectInput>
-          </Field>
-          <Field label="Nationality">
-            <SelectInput name="nationality" value={form.nationality} onChange={handleChange}>
-              <option value="Indian">Indian</option>
-              <option value="NRI">NRI</option>
-              <option value="PIO">PIO</option>
-              <option value="OCI">OCI</option>
-              <option value="FN">Foreign National</option>
-            </SelectInput>
-          </Field>
-        </Section>
-
-        {/* Section 3: Coverage */}
-        <Section title="3 · Coverage" defaultOpen>
-          <Field label="Sum Assured (₹)">
-            <TextInput name="sum_assured" value={form.sum_assured} onChange={handleChange} type="number" min={0} />
-          </Field>
-          <Field label="Premium (₹)">
-            <TextInput name="premium" value={form.premium} onChange={handleChange} type="number" min={0} />
-          </Field>
-          <Field label="Existing Coverage (₹)">
-            <TextInput name="existing_coverage" value={form.existing_coverage} onChange={handleChange} type="number" min={0} />
-          </Field>
-          <Field label="Has Term Rider" span={1}>
-            <div className="pt-1">
-              <CheckboxInput name="has_term_rider" checked={form.has_term_rider} onChange={handleChange} label="Term Rider attached" />
-            </div>
-          </Field>
-        </Section>
-
-        {/* Section 4: Build */}
-        <Section title="4 · Build (Physical Measurements)">
-          <Field label="Height (cm)">
-            <TextInput name="height" value={form.height} onChange={handleChange} type="number" min={0} step={0.1} placeholder="e.g. 170" />
-          </Field>
-          <Field label="Weight (kg)">
-            <TextInput name="weight" value={form.weight} onChange={handleChange} type="number" min={0} step={0.1} placeholder="e.g. 70" />
-          </Field>
-          <Field label="BMI (auto-calculated)">
-            <div className="flex items-center gap-2">
-              <input
-                className="input bg-gray-50"
-                type="text"
-                value={form.bmi ? `${form.bmi} kg/m²` : ''}
-                readOnly
-                placeholder="Set height & weight"
-              />
-            </div>
-          </Field>
-          <Field label="Weight Changed?">
-            <div className="pt-1">
-              <CheckboxInput name="has_weight_changed" checked={form.has_weight_changed} onChange={handleChange} label="Significant weight change" />
-            </div>
-          </Field>
-        </Section>
-
-        {/* Section 5: Residential Status */}
-        <Section title="5 · Residential Status">
-          <Field label="Residential Country">
-            <SelectInput name="residential_country" value={form.residential_country} onChange={handleChange}>
-              <option value="India">India</option>
-              <option value="Standard">Standard</option>
-              <option value="Substandard">Substandard</option>
-            </SelectInput>
-          </Field>
-          <Field label="Business Country">
-            <TextInput name="business_country" value={form.business_country} onChange={handleChange} placeholder="e.g. USA (optional)" />
-          </Field>
-        </Section>
-
-        {/* Section 6: Health & History */}
-        <Section title="6 · Health & Medical History">
-          <Field label="Medical History" span={1}>
-            <div className="pt-1 space-y-2">
-              <CheckboxInput name="has_medical_history" checked={form.has_medical_history} onChange={handleChange} label="Has Medical History" />
-            </div>
-          </Field>
-          <Field label="Adventurous Activities" span={1}>
-            <div className="pt-1">
-              <CheckboxInput name="is_adventurous" checked={form.is_adventurous} onChange={handleChange} label="Participates in Adventurous Activities" />
-            </div>
-          </Field>
-          <Field label="Family History" span={1}>
-            <div className="pt-1">
-              <CheckboxInput name="family_medical_history_2_or_more" checked={form.family_medical_history_2_or_more} onChange={handleChange} label="2+ Family Members with Medical History" />
-            </div>
-          </Field>
-          <Field label="Pregnant" span={1}>
-            <div className="pt-1">
-              <CheckboxInput name="is_pregnant" checked={form.is_pregnant} onChange={handleChange} label="Is Pregnant" />
-            </div>
-          </Field>
-          {form.is_pregnant && (
-            <Field label="Pregnancy Weeks">
-              <TextInput name="pregnancy_weeks" value={form.pregnancy_weeks} onChange={handleChange} type="number" min={1} max={42} placeholder="weeks" />
-            </Field>
-          )}
-          <Field label="Medical Generated" span={1}>
-            <div className="pt-1">
-              <CheckboxInput name="is_medical_generated" checked={form.is_medical_generated} onChange={handleChange} label="Medical Report Generated" />
-            </div>
-          </Field>
-        </Section>
-
-        {/* Section 7: Habits */}
-        <Section title="7 · Lifestyle Habits">
-          <Field label="Smoker" span={1}>
-            <div className="pt-1">
-              <CheckboxInput name="is_smoker" checked={form.is_smoker} onChange={handleChange} label="Is Smoker" />
-            </div>
-          </Field>
-          {form.is_smoker && (
-            <>
-              <Field label="Cigarettes/Day">
-                <TextInput name="cigarettes_per_day" value={form.cigarettes_per_day} onChange={handleChange} type="number" min={0} placeholder="count" />
+      <div className="grid grid-cols-1 xl:grid-cols-[1.65fr_1fr] gap-6 items-start">
+        {/* Left: Proposal form */}
+        <div className="card p-5">
+          <form onSubmit={handleSubmit} className="space-y-1">
+            {/* Section 1: Basic Info */}
+            <Section title="1 · Basic Info" defaultOpen>
+              <Field label="Proposal ID">
+                <TextInput name="proposal_id" value={form.proposal_id} onChange={handleChange} placeholder="Auto-generated if blank" />
               </Field>
-              <Field label="Smoking Years">
-                <TextInput name="smoking_years" value={form.smoking_years} onChange={handleChange} type="number" min={0} placeholder="years" />
-              </Field>
-            </>
-          )}
-          <Field label="Tobacco Qty (g/day)" span={form.is_smoker ? 3 : 1}>
-            <TextInput name="tobacco_quantity" value={form.tobacco_quantity} onChange={handleChange} type="number" min={0} step={0.1} placeholder="grams" />
-          </Field>
-          <Field label="Alcoholic" span={1}>
-            <div className="pt-1">
-              <CheckboxInput name="is_alcoholic" checked={form.is_alcoholic} onChange={handleChange} label="Is Alcoholic" />
-            </div>
-          </Field>
-          {form.is_alcoholic && (
-            <>
-              <Field label="Alcohol Type">
-                <TextInput name="alcohol_type" value={form.alcohol_type} onChange={handleChange} placeholder="e.g. Beer/Whiskey" />
-              </Field>
-              <Field label="Liquor Type">
-                <SelectInput name="liquor_type" value={form.liquor_type} onChange={handleChange}>
-                  <option value="">Select type</option>
-                  <option value="hard">Hard Liquor</option>
-                  <option value="beer">Beer</option>
-                  <option value="wine">Wine</option>
-                  <option value="mixed">Mixed</option>
+              <Field label="Product Type">
+                <SelectInput name="product_type" value={form.product_type} onChange={handleChange}>
+                  <option value="term_life">Term Life</option>
+                  <option value="endowment">Endowment</option>
+                  <option value="ulip">ULIP</option>
+                  <option value="health">Health</option>
                 </SelectInput>
               </Field>
-              <Field label="Hard Liquor (ml/day)">
-                <TextInput name="hard_liquor_quantity" value={form.hard_liquor_quantity} onChange={handleChange} type="number" min={0} />
+              <Field label="Product Category">
+                <SelectInput name="product_category" value={form.product_category} onChange={handleChange}>
+                  <option value="life">Life</option>
+                  <option value="health">Health</option>
+                  <option value="savings">Savings</option>
+                  <option value="investment">Investment</option>
+                </SelectInput>
               </Field>
-              <Field label="Beer (ml/day)">
-                <TextInput name="beer_quantity" value={form.beer_quantity} onChange={handleChange} type="number" min={0} />
+              <Field label="Product Code">
+                <TextInput name="product_code" value={form.product_code} onChange={handleChange} placeholder="e.g. TL001" />
               </Field>
-              <Field label="Wine (ml/day)">
-                <TextInput name="wine_quantity" value={form.wine_quantity} onChange={handleChange} type="number" min={0} />
+              <Field label="Payment Mode">
+                <SelectInput name="payment_mode" value={form.payment_mode} onChange={handleChange}>
+                  <option value="monthly">Monthly</option>
+                  <option value="quarterly">Quarterly</option>
+                  <option value="half_yearly">Half Yearly</option>
+                  <option value="annual">Annual</option>
+                </SelectInput>
               </Field>
-            </>
+              <Field label="Mode of Purchase">
+                <SelectInput name="mode_of_purchase" value={form.mode_of_purchase} onChange={handleChange}>
+                  <option value="Online">Online</option>
+                  <option value="Physical">Physical</option>
+                  <option value="Amex">Amex</option>
+                </SelectInput>
+              </Field>
+              <Field label="Policy Term (yrs)">
+                <TextInput name="policy_term" value={form.policy_term} onChange={handleChange} type="number" min={1} max={50} />
+              </Field>
+              <Field label="PPT (yrs)">
+                <TextInput name="premium_payment_term" value={form.premium_payment_term} onChange={handleChange} type="number" min={1} max={50} />
+              </Field>
+              <Field label="Policy Number">
+                <TextInput name="policy_number" value={form.policy_number} onChange={handleChange} type="number" min={0} />
+              </Field>
+            </Section>
+
+            {/* Section 2: Applicant */}
+            <Section title="2 · Applicant Details" defaultOpen>
+              <Field label="Age">
+                <TextInput name="applicant_age" value={form.applicant_age} onChange={handleChange} type="number" min={0} max={100} />
+              </Field>
+              <Field label="Gender">
+                <SelectInput name="applicant_gender" value={form.applicant_gender} onChange={handleChange}>
+                  <option value="M">Male</option>
+                  <option value="F">Female</option>
+                </SelectInput>
+              </Field>
+              <Field label="Annual Income (₹)">
+                <TextInput name="applicant_income" value={form.applicant_income} onChange={handleChange} type="number" min={0} />
+              </Field>
+              <Field label="Proposer Income (₹)">
+                <TextInput name="proposer_income" value={form.proposer_income} onChange={handleChange} type="number" min={0} />
+              </Field>
+              <Field label="Qualification">
+                <SelectInput name="qualification" value={form.qualification} onChange={handleChange}>
+                  {QUALIFICATIONS.map((q) => (
+                    <option key={q.value} value={q.value}>{q.label}</option>
+                  ))}
+                </SelectInput>
+              </Field>
+              <Field label="Marital Status">
+                <SelectInput name="marital_status" value={form.marital_status} onChange={handleChange}>
+                  <option value="S">Single</option>
+                  <option value="M">Married</option>
+                  <option value="W">Widowed</option>
+                  <option value="D">Divorced</option>
+                </SelectInput>
+              </Field>
+              <Field label="Nationality">
+                <SelectInput name="nationality" value={form.nationality} onChange={handleChange}>
+                  <option value="Indian">Indian</option>
+                  <option value="NRI">NRI</option>
+                  <option value="PIO">PIO</option>
+                  <option value="OCI">OCI</option>
+                  <option value="FN">Foreign National</option>
+                </SelectInput>
+              </Field>
+            </Section>
+
+            {/* Section 3: Coverage */}
+            <Section title="3 · Coverage" defaultOpen>
+              <Field label="Sum Assured (₹)">
+                <TextInput name="sum_assured" value={form.sum_assured} onChange={handleChange} type="number" min={0} />
+              </Field>
+              <Field label="Premium (₹)">
+                <TextInput name="premium" value={form.premium} onChange={handleChange} type="number" min={0} />
+              </Field>
+              <Field label="Existing Coverage (₹)">
+                <TextInput name="existing_coverage" value={form.existing_coverage} onChange={handleChange} type="number" min={0} />
+              </Field>
+              <Field label="Has Term Rider" span={1}>
+                <div className="pt-1">
+                  <CheckboxInput name="has_term_rider" checked={form.has_term_rider} onChange={handleChange} label="Term Rider attached" />
+                </div>
+              </Field>
+            </Section>
+
+            {/* Section 4: Build */}
+            <Section title="4 · Build (Physical Measurements)">
+              <Field label="Height (cm)">
+                <TextInput name="height" value={form.height} onChange={handleChange} type="number" min={0} step={0.1} placeholder="e.g. 170" />
+              </Field>
+              <Field label="Weight (kg)">
+                <TextInput name="weight" value={form.weight} onChange={handleChange} type="number" min={0} step={0.1} placeholder="e.g. 70" />
+              </Field>
+              <Field label="BMI (auto-calculated)">
+                <div className="flex items-center gap-2">
+                  <input
+                    className="input bg-gray-50"
+                    type="text"
+                    value={form.bmi ? `${form.bmi} kg/m²` : ''}
+                    readOnly
+                    placeholder="Set height & weight"
+                  />
+                </div>
+              </Field>
+              <Field label="Weight Changed?">
+                <div className="pt-1">
+                  <CheckboxInput name="has_weight_changed" checked={form.has_weight_changed} onChange={handleChange} label="Significant weight change" />
+                </div>
+              </Field>
+            </Section>
+
+            {/* Section 5: Residential Status */}
+            <Section title="5 · Residential Status">
+              <Field label="Residential Country">
+                <SelectInput name="residential_country" value={form.residential_country} onChange={handleChange}>
+                  <option value="India">India</option>
+                  <option value="Standard">Standard</option>
+                  <option value="Substandard">Substandard</option>
+                </SelectInput>
+              </Field>
+              <Field label="Business Country">
+                <TextInput name="business_country" value={form.business_country} onChange={handleChange} placeholder="e.g. USA (optional)" />
+              </Field>
+            </Section>
+
+            {/* Section 6: Health & History */}
+            <Section title="6 · Health & Medical History">
+              <Field label="Medical History" span={1}>
+                <div className="pt-1 space-y-2">
+                  <CheckboxInput name="has_medical_history" checked={form.has_medical_history} onChange={handleChange} label="Has Medical History" />
+                </div>
+              </Field>
+              <Field label="Adventurous Activities" span={1}>
+                <div className="pt-1">
+                  <CheckboxInput name="is_adventurous" checked={form.is_adventurous} onChange={handleChange} label="Participates in Adventurous Activities" />
+                </div>
+              </Field>
+              <Field label="Family History" span={1}>
+                <div className="pt-1">
+                  <CheckboxInput name="family_medical_history_2_or_more" checked={form.family_medical_history_2_or_more} onChange={handleChange} label="2+ Family Members with Medical History" />
+                </div>
+              </Field>
+              <Field label="Pregnant" span={1}>
+                <div className="pt-1">
+                  <CheckboxInput name="is_pregnant" checked={form.is_pregnant} onChange={handleChange} label="Is Pregnant" />
+                </div>
+              </Field>
+              {form.is_pregnant && (
+                <Field label="Pregnancy Weeks">
+                  <TextInput name="pregnancy_weeks" value={form.pregnancy_weeks} onChange={handleChange} type="number" min={1} max={42} placeholder="weeks" />
+                </Field>
+              )}
+              <Field label="Medical Generated" span={1}>
+                <div className="pt-1">
+                  <CheckboxInput name="is_medical_generated" checked={form.is_medical_generated} onChange={handleChange} label="Medical Report Generated" />
+                </div>
+              </Field>
+            </Section>
+
+            {/* Section 7: Habits */}
+            <Section title="7 · Lifestyle Habits">
+              <Field label="Smoker" span={1}>
+                <div className="pt-1">
+                  <CheckboxInput name="is_smoker" checked={form.is_smoker} onChange={handleChange} label="Is Smoker" />
+                </div>
+              </Field>
+              {form.is_smoker && (
+                <>
+                  <Field label="Cigarettes/Day">
+                    <TextInput name="cigarettes_per_day" value={form.cigarettes_per_day} onChange={handleChange} type="number" min={0} placeholder="count" />
+                  </Field>
+                  <Field label="Smoking Years">
+                    <TextInput name="smoking_years" value={form.smoking_years} onChange={handleChange} type="number" min={0} placeholder="years" />
+                  </Field>
+                </>
+              )}
+              <Field label="Tobacco Qty (g/day)" span={form.is_smoker ? 3 : 1}>
+                <TextInput name="tobacco_quantity" value={form.tobacco_quantity} onChange={handleChange} type="number" min={0} step={0.1} placeholder="grams" />
+              </Field>
+              <Field label="Alcoholic" span={1}>
+                <div className="pt-1">
+                  <CheckboxInput name="is_alcoholic" checked={form.is_alcoholic} onChange={handleChange} label="Is Alcoholic" />
+                </div>
+              </Field>
+              {form.is_alcoholic && (
+                <>
+                  <Field label="Alcohol Type">
+                    <TextInput name="alcohol_type" value={form.alcohol_type} onChange={handleChange} placeholder="e.g. Beer/Whiskey" />
+                  </Field>
+                  <Field label="Liquor Type">
+                    <SelectInput name="liquor_type" value={form.liquor_type} onChange={handleChange}>
+                      <option value="">Select type</option>
+                      <option value="hard">Hard Liquor</option>
+                      <option value="beer">Beer</option>
+                      <option value="wine">Wine</option>
+                      <option value="mixed">Mixed</option>
+                    </SelectInput>
+                  </Field>
+                  <Field label="Hard Liquor (ml/day)">
+                    <TextInput name="hard_liquor_quantity" value={form.hard_liquor_quantity} onChange={handleChange} type="number" min={0} />
+                  </Field>
+                  <Field label="Beer (ml/day)">
+                    <TextInput name="beer_quantity" value={form.beer_quantity} onChange={handleChange} type="number" min={0} />
+                  </Field>
+                  <Field label="Wine (ml/day)">
+                    <TextInput name="wine_quantity" value={form.wine_quantity} onChange={handleChange} type="number" min={0} />
+                  </Field>
+                </>
+              )}
+              <Field label="Narcotic" span={1}>
+                <div className="pt-1">
+                  <CheckboxInput name="is_narcotic" checked={form.is_narcotic} onChange={handleChange} label="Narcotic Use" />
+                </div>
+              </Field>
+            </Section>
+
+            {/* Section 8: Occupation */}
+            <Section title="8 · Occupation & Risk">
+              <Field label="Occupation Code">
+                <TextInput name="occupation_code" value={form.occupation_code} onChange={handleChange} placeholder="e.g. OCC001" />
+              </Field>
+              <Field label="Occupation Class">
+                <SelectInput name="occupation_class" value={form.occupation_class} onChange={handleChange}>
+                  <option value="class_1">Class 1 (Low Risk)</option>
+                  <option value="class_2">Class 2</option>
+                  <option value="class_3">Class 3</option>
+                  <option value="class_4">Class 4 (High Risk)</option>
+                </SelectInput>
+              </Field>
+              <Field label="Hazardous?">
+                <div className="pt-1">
+                  <CheckboxInput name="is_occupation_hazardous" checked={form.is_occupation_hazardous} onChange={handleChange} label="Hazardous Occupation" />
+                </div>
+              </Field>
+              <Field label="Pincode">
+                <TextInput name="pincode" value={form.pincode} onChange={handleChange} placeholder="6-digit pincode" />
+              </Field>
+              <Field label="Negative Pincode?">
+                <div className="pt-1">
+                  <CheckboxInput name="is_negative_pincode" checked={form.is_negative_pincode} onChange={handleChange} label="Negative Pincode" />
+                </div>
+              </Field>
+              <Field label="Risk Category">
+                <SelectInput name="risk_category" value={form.risk_category} onChange={handleChange}>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </SelectInput>
+              </Field>
+              <Field label="AML Category">
+                <SelectInput name="aml_category" value={form.aml_category} onChange={handleChange}>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </SelectInput>
+              </Field>
+            </Section>
+
+            {/* Section 9: Compliance */}
+            <Section title="9 · Compliance & Flags">
+              <Field label="PEP">
+                <div className="pt-1">
+                  <CheckboxInput name="is_pep" checked={form.is_pep} onChange={handleChange} label="Politically Exposed Person" />
+                </div>
+              </Field>
+              <Field label="Criminally Convicted">
+                <div className="pt-1">
+                  <CheckboxInput name="is_criminally_convicted" checked={form.is_criminally_convicted} onChange={handleChange} label="Criminally Convicted" />
+                </div>
+              </Field>
+              <Field label="OFAC Listed">
+                <div className="pt-1">
+                  <CheckboxInput name="is_ofac" checked={form.is_ofac} onChange={handleChange} label="OFAC Listed" />
+                </div>
+              </Field>
+              <Field label="Special Class">
+                <SelectInput name="special_class" value={form.special_class} onChange={handleChange}>
+                  <option value="">None</option>
+                  <option value="HUF">HUF</option>
+                  <option value="MWP">MWP</option>
+                  <option value="employer_employee">Employer-Employee</option>
+                  <option value="keyman">Keyman</option>
+                </SelectInput>
+              </Field>
+            </Section>
+
+            {/* Section 10: IIB */}
+            <Section title="10 · IIB / Previous Policy">
+              <Field label="IIB Status">
+                <SelectInput name="iib_status" value={form.iib_status} onChange={handleChange}>
+                  {IIB_STATUSES.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </SelectInput>
+              </Field>
+              <Field label="IIB Negative?">
+                <div className="pt-1">
+                  <CheckboxInput name="iib_is_negative" checked={form.iib_is_negative} onChange={handleChange} label="IIB Is Negative" />
+                </div>
+              </Field>
+              <Field label="IIB Score">
+                <TextInput name="iib_score" value={form.iib_score} onChange={handleChange} type="number" placeholder="score" />
+              </Field>
+              <Field label="New to IIB?">
+                <div className="pt-1">
+                  <CheckboxInput name="is_la_new_to_iib" checked={form.is_la_new_to_iib} onChange={handleChange} label="LA is New to IIB" />
+                </div>
+              </Field>
+              <Field label="FGLI Policy Statuses" span={3}>
+                <TextInput
+                  name="fgli_policy_statuses"
+                  value={form.fgli_policy_statuses}
+                  onChange={handleChange}
+                  placeholder="Comma-separated statuses e.g. active,lapsed"
+                />
+                <div className="text-xs text-gray-400 mt-1">Comma-separated list of policy statuses</div>
+              </Field>
+            </Section>
+
+            {/* Section 11: Relationship */}
+            <Section title="11 · Relationship & Proposer">
+              <Field label="LA is Proposer?">
+                <div className="pt-1">
+                  <CheckboxInput name="is_la_proposer" checked={form.is_la_proposer} onChange={handleChange} label="LA Same as Proposer" />
+                </div>
+              </Field>
+              <Field label="Corporate Proposer?">
+                <div className="pt-1">
+                  <CheckboxInput name="is_proposer_corporate" checked={form.is_proposer_corporate} onChange={handleChange} label="Proposer is Corporate" />
+                </div>
+              </Field>
+              <Field label="LA-Proposer Relation">
+                <TextInput name="la_proposer_relation" value={form.la_proposer_relation} onChange={handleChange} placeholder="e.g. Spouse, Parent" />
+              </Field>
+              <Field label="Nominee Relation">
+                <TextInput name="nominee_relation" value={form.nominee_relation} onChange={handleChange} placeholder="e.g. Spouse, Child" />
+              </Field>
+            </Section>
+
+            {/* Submit */}
+            <div className="pt-4 flex items-center gap-3">
+              <button
+                type="submit"
+                className="btn-primary px-8 py-3 text-base"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Evaluating…
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Evaluate Proposal
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleReset}
+              >
+                Reset Form
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Right: Decision / result panel */}
+        <div className="space-y-4 sticky top-4">
+          {!result && (
+            <div className="card">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400">
+                  <Send className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-gray-800">Decision Panel</div>
+                  <div className="text-xs text-gray-500 mt-0.5">
+                    Submit the proposal to see the STP decision, score, and rule trace here.
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
-          <Field label="Narcotic" span={1}>
-            <div className="pt-1">
-              <CheckboxInput name="is_narcotic" checked={form.is_narcotic} onChange={handleChange} label="Narcotic Use" />
+          {result && (
+            <div id="result-panel">
+              <ResultPanel result={result} onReset={handleReset} />
             </div>
-          </Field>
-        </Section>
-
-        {/* Section 8: Occupation */}
-        <Section title="8 · Occupation & Risk">
-          <Field label="Occupation Code">
-            <TextInput name="occupation_code" value={form.occupation_code} onChange={handleChange} placeholder="e.g. OCC001" />
-          </Field>
-          <Field label="Occupation Class">
-            <SelectInput name="occupation_class" value={form.occupation_class} onChange={handleChange}>
-              <option value="class_1">Class 1 (Low Risk)</option>
-              <option value="class_2">Class 2</option>
-              <option value="class_3">Class 3</option>
-              <option value="class_4">Class 4 (High Risk)</option>
-            </SelectInput>
-          </Field>
-          <Field label="Hazardous?">
-            <div className="pt-1">
-              <CheckboxInput name="is_occupation_hazardous" checked={form.is_occupation_hazardous} onChange={handleChange} label="Hazardous Occupation" />
-            </div>
-          </Field>
-          <Field label="Pincode">
-            <TextInput name="pincode" value={form.pincode} onChange={handleChange} placeholder="6-digit pincode" />
-          </Field>
-          <Field label="Negative Pincode?">
-            <div className="pt-1">
-              <CheckboxInput name="is_negative_pincode" checked={form.is_negative_pincode} onChange={handleChange} label="Negative Pincode" />
-            </div>
-          </Field>
-          <Field label="Risk Category">
-            <SelectInput name="risk_category" value={form.risk_category} onChange={handleChange}>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </SelectInput>
-          </Field>
-          <Field label="AML Category">
-            <SelectInput name="aml_category" value={form.aml_category} onChange={handleChange}>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </SelectInput>
-          </Field>
-        </Section>
-
-        {/* Section 9: Compliance */}
-        <Section title="9 · Compliance & Flags">
-          <Field label="PEP">
-            <div className="pt-1">
-              <CheckboxInput name="is_pep" checked={form.is_pep} onChange={handleChange} label="Politically Exposed Person" />
-            </div>
-          </Field>
-          <Field label="Criminally Convicted">
-            <div className="pt-1">
-              <CheckboxInput name="is_criminally_convicted" checked={form.is_criminally_convicted} onChange={handleChange} label="Criminally Convicted" />
-            </div>
-          </Field>
-          <Field label="OFAC Listed">
-            <div className="pt-1">
-              <CheckboxInput name="is_ofac" checked={form.is_ofac} onChange={handleChange} label="OFAC Listed" />
-            </div>
-          </Field>
-          <Field label="Special Class">
-            <SelectInput name="special_class" value={form.special_class} onChange={handleChange}>
-              <option value="">None</option>
-              <option value="HUF">HUF</option>
-              <option value="MWP">MWP</option>
-              <option value="employer_employee">Employer-Employee</option>
-              <option value="keyman">Keyman</option>
-            </SelectInput>
-          </Field>
-        </Section>
-
-        {/* Section 10: IIB */}
-        <Section title="10 · IIB / Previous Policy">
-          <Field label="IIB Status">
-            <SelectInput name="iib_status" value={form.iib_status} onChange={handleChange}>
-              {IIB_STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </SelectInput>
-          </Field>
-          <Field label="IIB Negative?">
-            <div className="pt-1">
-              <CheckboxInput name="iib_is_negative" checked={form.iib_is_negative} onChange={handleChange} label="IIB Is Negative" />
-            </div>
-          </Field>
-          <Field label="IIB Score">
-            <TextInput name="iib_score" value={form.iib_score} onChange={handleChange} type="number" placeholder="score" />
-          </Field>
-          <Field label="New to IIB?">
-            <div className="pt-1">
-              <CheckboxInput name="is_la_new_to_iib" checked={form.is_la_new_to_iib} onChange={handleChange} label="LA is New to IIB" />
-            </div>
-          </Field>
-          <Field label="FGLI Policy Statuses" span={3}>
-            <TextInput
-              name="fgli_policy_statuses"
-              value={form.fgli_policy_statuses}
-              onChange={handleChange}
-              placeholder="Comma-separated statuses e.g. active,lapsed"
-            />
-            <div className="text-xs text-gray-400 mt-1">Comma-separated list of policy statuses</div>
-          </Field>
-        </Section>
-
-        {/* Section 11: Relationship */}
-        <Section title="11 · Relationship & Proposer">
-          <Field label="LA is Proposer?">
-            <div className="pt-1">
-              <CheckboxInput name="is_la_proposer" checked={form.is_la_proposer} onChange={handleChange} label="LA Same as Proposer" />
-            </div>
-          </Field>
-          <Field label="Corporate Proposer?">
-            <div className="pt-1">
-              <CheckboxInput name="is_proposer_corporate" checked={form.is_proposer_corporate} onChange={handleChange} label="Proposer is Corporate" />
-            </div>
-          </Field>
-          <Field label="LA-Proposer Relation">
-            <TextInput name="la_proposer_relation" value={form.la_proposer_relation} onChange={handleChange} placeholder="e.g. Spouse, Parent" />
-          </Field>
-          <Field label="Nominee Relation">
-            <TextInput name="nominee_relation" value={form.nominee_relation} onChange={handleChange} placeholder="e.g. Spouse, Child" />
-          </Field>
-        </Section>
-
-        {/* Submit */}
-        <div className="pt-4 flex items-center gap-3">
-          <button
-            type="submit"
-            className="btn-primary px-8 py-3 text-base"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Evaluating…
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Evaluate Proposal
-              </>
-            )}
-          </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={handleReset}
-          >
-            Reset Form
-          </button>
+          )}
         </div>
-      </form>
-
-      {/* Result */}
-      {result && (
-        <div id="result-panel">
-          <ResultPanel result={result} onReset={handleReset} />
-        </div>
-      )}
+      </div>
     </div>
   );
 }
