@@ -442,10 +442,21 @@ export default function Evaluate() {
       const n = parseFloat(v);
       return isNaN(n) ? null : n;
     };
+    const boolOrNull = (v) => {
+      if (v === true || v === 'true') return true;
+      if (v === false || v === 'false') return false;
+      return null;
+    };
+    // Backend expects liquor_type numeric: 1 = single type, 2 = multiple/mixed types
+    const LIQUOR_TYPE_SINGLE = 1;
+    const LIQUOR_TYPE_MIXED = 2;
     const liquorTypeValue = (() => {
       if (!form.is_alcoholic) return null;
-      if (form.liquor_type === 'mixed') return 2;
-      return form.liquor_type ? 1 : null;
+      if (form.liquor_type === 'mixed') return LIQUOR_TYPE_MIXED;
+      // Valid single liquor type identifiers from the form select
+      const singleTypes = ['hard', 'beer', 'wine'];
+      // Any selected single type (hard/beer/wine) → single liquor type flag
+      return singleTypes.includes(form.liquor_type) ? LIQUOR_TYPE_SINGLE : null;
     })();
     return {
       proposal_id: form.proposal_id || `PROP-${Date.now()}`,
@@ -512,9 +523,9 @@ export default function Evaluate() {
       special_class: nullIfEmpty(form.special_class),
 
       iib_status: nullIfEmpty(form.iib_status),
-      iib_is_negative: form.iib_is_negative,
+      iib_is_negative: boolOrNull(form.iib_is_negative),
       iib_score: numOrNull(form.iib_score),
-      is_la_new_to_iib: form.is_la_new_to_iib,
+      is_la_new_to_iib: boolOrNull(form.is_la_new_to_iib),
       fgli_policy_statuses: form.fgli_policy_statuses
         ? form.fgli_policy_statuses
             .split(',')
