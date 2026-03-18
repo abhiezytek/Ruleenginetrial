@@ -6,6 +6,10 @@ import {
   ToggleLeft,
   ToggleRight,
   Filter,
+  Plus,
+  MoreVertical,
+  Trash2,
+  Eye,
 } from 'lucide-react';
 import api from '../lib/api';
 
@@ -15,7 +19,9 @@ export default function Rules() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [togglingId, setTogglingId] = useState(null);
+  const [actionOpenId, setActionOpenId] = useState(null);
 
   const doFetch = () =>
     api
@@ -50,9 +56,27 @@ export default function Rules() {
         (r.category ?? '').toLowerCase().includes(q) ||
         (r.description ?? '').toLowerCase().includes(q);
       const matchCat = !categoryFilter || r.category === categoryFilter;
-      return matchSearch && matchCat;
+      const matchStatus =
+        !statusFilter ||
+        (statusFilter === 'enabled' && r.is_enabled) ||
+        (statusFilter === 'disabled' && !r.is_enabled);
+      return matchSearch && matchCat && matchStatus;
     });
-  }, [rules, search, categoryFilter]);
+  }, [rules, search, categoryFilter, statusFilter]);
+
+  const handleDelete = async (rule) => {
+    const id = rule.id ?? rule.rule_id;
+    if (!id) return;
+    if (!window.confirm(`Delete rule "${rule.name ?? rule.rule_name}"?`)) return;
+    try {
+      await api.deleteRule(id);
+      setRules((prev) => prev.filter((r) => (r.id ?? r.rule_id) !== id));
+    } catch (e) {
+      setError(String(e?.message || e));
+    } finally {
+      setActionOpenId(null);
+    }
+  };
 
   const handleToggle = async (rule) => {
     const id = rule.id ?? rule.rule_id;
@@ -68,6 +92,7 @@ export default function Rules() {
       setError(String(e?.message || e));
     } finally {
       setTogglingId(null);
+      setActionOpenId(null);
     }
   };
 
@@ -80,10 +105,20 @@ export default function Rules() {
             {rules.length} rules configured in the STP engine
           </p>
         </div>
-        <button className="btn-secondary" onClick={load} disabled={loading}>
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            className="btn-primary"
+            type="button"
+            onClick={() => window.alert('Rule creation UI will be added after migration.')}
+          >
+            <Plus className="w-4 h-4" />
+            Create Rule
+          </button>
+          <button className="btn-secondary" onClick={load} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -116,6 +151,18 @@ export default function Rules() {
             {categories.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
+          </select>
+        </div>
+        <div className="relative min-w-[160px]">
+          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <select
+            className="input pl-9"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="">All Statuses</option>
+            <option value="enabled">Enabled</option>
+            <option value="disabled">Disabled</option>
           </select>
         </div>
       </div>
@@ -151,7 +198,10 @@ export default function Rules() {
                     Priority
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    Enabled
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -201,18 +251,69 @@ export default function Rules() {
                         {rule.priority ?? '—'}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => handleToggle(rule)}
-                          disabled={togglingId === id}
-                          className="inline-flex items-center transition-colors disabled:opacity-40"
-                          title={rule.is_enabled ? 'Disable rule' : 'Enable rule'}
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${
+                            rule.is_enabled
+                              ? 'bg-green-50 text-green-700 border-green-200'
+                              : 'bg-gray-100 text-gray-500 border-gray-200'
+                          }`}
                         >
-                          {rule.is_enabled ? (
-                            <ToggleRight className="w-7 h-7 text-blue-500" />
-                          ) : (
-                            <ToggleLeft className="w-7 h-7 text-gray-300" />
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              rule.is_enabled ? 'bg-green-500' : 'bg-gray-400'
+                            }`}
+                          />
+                          {rule.is_enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="relative inline-block text-left">
+                          <button
+                            type="button"
+                            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+                            onClick={() => setActionOpenId((current) => (current === id ? null : id))}
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                          {actionOpenId === id && (
+                            <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                              <button
+                                className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                                onClick={() => {
+                                  setActionOpenId(null);
+                                  window.alert('View Rule details will be added after migration.');
+                                }}
+                              >
+                                <Eye className="w-4 h-4" />
+                                View details
+                              </button>
+                              <button
+                                className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                                onClick={() => handleToggle(rule)}
+                                disabled={togglingId === id}
+                              >
+                                {rule.is_enabled ? (
+                                  <>
+                                    <ToggleLeft className="w-4 h-4" />
+                                    Disable
+                                  </>
+                                ) : (
+                                  <>
+                                    <ToggleRight className="w-4 h-4" />
+                                    Enable
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                                onClick={() => handleDelete(rule)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </button>
+                            </div>
                           )}
-                        </button>
+                        </div>
                       </td>
                     </tr>
                   );
