@@ -44,10 +44,11 @@ function groupTemplates(templates) {
 }
 
 function TemplateRow({ t }) {
-  const products = Array.isArray(t.applicable_products)
-    ? t.applicable_products
-    : typeof t.applicable_products === 'string' && t.applicable_products
-    ? t.applicable_products.split(',').map((p) => p.trim())
+  const rawProducts = t.products ?? t.applicable_products;
+  const products = Array.isArray(rawProducts)
+    ? rawProducts
+    : typeof rawProducts === 'string' && rawProducts
+    ? rawProducts.split(',').map((p) => p.trim())
     : [];
 
   return (

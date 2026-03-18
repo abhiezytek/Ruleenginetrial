@@ -442,6 +442,22 @@ export default function Evaluate() {
       const n = parseFloat(v);
       return isNaN(n) ? null : n;
     };
+    const boolOrNull = (v) => {
+      if (v === true || v === 'true') return true;
+      if (v === false || v === 'false') return false;
+      return null;
+    };
+    // Backend expects liquor_type numeric: 1 = single type, 2 = multiple/mixed types
+    const LIQUOR_TYPE_SINGLE = 1;
+    const LIQUOR_TYPE_MIXED = 2;
+    const liquorTypeValue = (() => {
+      if (!form.is_alcoholic) return null;
+      if (form.liquor_type === 'mixed') return LIQUOR_TYPE_MIXED;
+      // Valid single liquor type identifiers from the form select
+      const singleTypes = ['hard', 'beer', 'wine'];
+      // Any selected single type (hard/beer/wine) → single liquor type flag
+      return singleTypes.includes(form.liquor_type) ? LIQUOR_TYPE_SINGLE : null;
+    })();
     return {
       proposal_id: form.proposal_id || `PROP-${Date.now()}`,
       product_code: form.product_code || 'GENERIC',
@@ -486,7 +502,7 @@ export default function Evaluate() {
       smoking_years: form.is_smoker ? numOrNull(form.smoking_years) : null,
       is_alcoholic: form.is_alcoholic,
       alcohol_type: nullIfEmpty(form.alcohol_type),
-      liquor_type: form.is_alcoholic ? nullIfEmpty(form.liquor_type) : null,
+      liquor_type: liquorTypeValue,
       hard_liquor_quantity: form.is_alcoholic ? numOrNull(form.hard_liquor_quantity) : null,
       beer_quantity: form.is_alcoholic ? numOrNull(form.beer_quantity) : null,
       wine_quantity: form.is_alcoholic ? numOrNull(form.wine_quantity) : null,
@@ -507,11 +523,15 @@ export default function Evaluate() {
       special_class: nullIfEmpty(form.special_class),
 
       iib_status: nullIfEmpty(form.iib_status),
-      iib_is_negative: form.iib_is_negative || null,
+      iib_is_negative: boolOrNull(form.iib_is_negative),
       iib_score: numOrNull(form.iib_score),
-      is_la_new_to_iib: form.is_la_new_to_iib || null,
+      is_la_new_to_iib: boolOrNull(form.is_la_new_to_iib),
       fgli_policy_statuses: form.fgli_policy_statuses
-        ? form.fgli_policy_statuses.split(',').map((s) => s.trim()).filter(Boolean)
+        ? form.fgli_policy_statuses
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .map((s) => s.toUpperCase())
         : null,
 
       is_la_proposer: form.is_la_proposer,
