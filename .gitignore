@@ -192,6 +192,11 @@ publish/
 # in these scripts will be unencrypted
 PublishScripts/
 
+# Frontend client
+ClientApp/node_modules/
+ClientApp/dist/
+ClientApp/.vite/
+
 # NuGet Packages
 *.nupkg
 # NuGet Symbol Packages
