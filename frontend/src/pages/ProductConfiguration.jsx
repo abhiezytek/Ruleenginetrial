@@ -220,7 +220,9 @@ export default function ProductConfiguration() {
   const [seeding, setSeeding] = useState(false);
   const [seedMsg, setSeedMsg] = useState(null);
 
-  const doFetch = () =>
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
     api
       .getGrids({ grid_type: typeFilter || undefined, product: productFilter || undefined })
       .then((data) => {
@@ -229,18 +231,20 @@ export default function ProductConfiguration() {
       })
       .catch((e) => setError(String(e?.message || e)))
       .finally(() => setLoading(false));
-
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    doFetch();
   }, [productFilter, typeFilter]);
 
   const load = () => {
     setLoading(true);
     setError(null);
     setSeedMsg(null);
-    doFetch();
+    api
+      .getGrids({ grid_type: typeFilter || undefined, product: productFilter || undefined })
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data?.items ?? data?.data ?? [];
+        setGrids(list);
+      })
+      .catch((e) => setError(String(e?.message || e)))
+      .finally(() => setLoading(false));
   };
 
   const handleSeedDefaults = async () => {
