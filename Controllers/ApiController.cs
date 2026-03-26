@@ -250,6 +250,7 @@ public class ApiController : ControllerBase
             ColLabels = dto.ColLabels,
             Cells = dto.Cells,
             Products = dto.Products,
+            EscalationFactors = dto.EscalationFactors,
             IsEnabled = dto.IsEnabled
         };
         
@@ -275,6 +276,7 @@ public class ApiController : ControllerBase
         grid.ColLabels = dto.ColLabels;
         grid.Cells = dto.Cells;
         grid.Products = dto.Products;
+        grid.EscalationFactors = dto.EscalationFactors;
         grid.IsEnabled = dto.IsEnabled;
         grid.UpdatedAt = DateTime.UtcNow.ToString("o");
         
@@ -295,6 +297,43 @@ public class ApiController : ControllerBase
         await LogAudit("DELETE", "grid", id, grid.Name);
         
         return Ok(new { message = "Grid deleted successfully" });
+    }
+    
+    // Grid lookup by product type
+    [HttpGet("grids/by-product/{productType}")]
+    public async Task<IActionResult> GetGridsByProduct(string productType)
+    {
+        var grids = await _context.Grids.ToListAsync();
+        var filtered = grids.Where(g => g.Products.Contains(productType)).ToList();
+        return Ok(filtered.Select(ToGridResponse));
+    }
+    
+    // Grid lookup by grid type
+    [HttpGet("grids/by-type/{gridType}")]
+    public async Task<IActionResult> GetGridsByType(string gridType)
+    {
+        var grids = await _context.Grids.Where(g => g.GridType == gridType).ToListAsync();
+        return Ok(grids.Select(ToGridResponse));
+    }
+    
+    // Seed default underwriting grids (idempotent - skips existing grid names)
+    [HttpPost("grids/seed-defaults")]
+    public async Task<IActionResult> SeedDefaultGrids()
+    {
+        var defaults = GetDefaultGridTemplates();
+        var existingNames = await _context.Grids.Select(g => g.Name).ToListAsync();
+        var toAdd = defaults.Where(g => !existingNames.Contains(g.Name)).ToList();
+        
+        if (toAdd.Count == 0)
+            return Ok(new { message = "All default grids already exist", seeded = 0, total = existingNames.Count });
+        
+        _context.Grids.AddRange(toAdd);
+        await _context.SaveChangesAsync();
+        
+        foreach (var g in toAdd)
+            await LogAudit("CREATE", "grid", g.Id, g.Name);
+        
+        return Ok(new { message = $"Seeded {toAdd.Count} default grids", seeded = toAdd.Count, total = existingNames.Count + toAdd.Count });
     }
     
     // Products CRUD
@@ -1864,6 +1903,7 @@ public class ApiController : ControllerBase
         col_labels = g.ColLabels,
         cells = g.Cells,
         products = g.Products,
+        escalation_factors = g.EscalationFactors,
         is_enabled = g.IsEnabled,
         created_at = g.CreatedAt,
         updated_at = g.UpdatedAt
@@ -1930,4 +1970,473 @@ public class ApiController : ControllerBase
         created_at = s.CreatedAt,
         updated_at = s.UpdatedAt
     };
+    
+    // ==================== DEFAULT GRID TEMPLATES ====================
+    private static List<Grid> GetDefaultGridTemplates()
+    {
+        var now = DateTime.UtcNow.ToString("o");
+        return new List<Grid>
+        {
+            // ── MEDICAL GRIDS ──────────────────────────────────────────────
+            new Grid
+            {
+                Name = "medical_term_age_sa",
+                Description = "Medical requirements grid for Term Life by age band vs sum assured",
+                GridType = "medical",
+                RowField = "applicant_age",
+                ColField = "sum_assured",
+                RowLabels = new List<string> { "18-25", "26-35", "36-45", "46-55", "56-65" },
+                ColLabels = new List<string> { "0-5L", "5L-15L", "15L-50L", "50L-1Cr", "1Cr-5Cr", "5Cr+" },
+                Cells = new List<GridCell>
+                {
+                    // 18-25
+                    new GridCell { RowValue = "18-25", ColValue = "0-5L",     Result = "NON_MED" },
+                    new GridCell { RowValue = "18-25", ColValue = "5L-15L",   Result = "NON_MED" },
+                    new GridCell { RowValue = "18-25", ColValue = "15L-50L",  Result = "BASIC_VITALS" },
+                    new GridCell { RowValue = "18-25", ColValue = "50L-1Cr",  Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "18-25", ColValue = "1Cr-5Cr",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "18-25", ColValue = "5Cr+",     Result = "CARDIAC_PLUS" },
+                    // 26-35
+                    new GridCell { RowValue = "26-35", ColValue = "0-5L",     Result = "NON_MED" },
+                    new GridCell { RowValue = "26-35", ColValue = "5L-15L",   Result = "BASIC_VITALS" },
+                    new GridCell { RowValue = "26-35", ColValue = "15L-50L",  Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "26-35", ColValue = "50L-1Cr",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "26-35", ColValue = "1Cr-5Cr",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "26-35", ColValue = "5Cr+",     Result = "CARDIAC_PLUS" },
+                    // 36-45
+                    new GridCell { RowValue = "36-45", ColValue = "0-5L",     Result = "BASIC_VITALS" },
+                    new GridCell { RowValue = "36-45", ColValue = "5L-15L",   Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "36-45", ColValue = "15L-50L",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "36-45", ColValue = "50L-1Cr",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "36-45", ColValue = "1Cr-5Cr",  Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "36-45", ColValue = "5Cr+",     Result = "CARDIAC_PLUS" },
+                    // 46-55
+                    new GridCell { RowValue = "46-55", ColValue = "0-5L",     Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "46-55", ColValue = "5L-15L",   Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "46-55", ColValue = "15L-50L",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "46-55", ColValue = "50L-1Cr",  Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "46-55", ColValue = "1Cr-5Cr",  Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "46-55", ColValue = "5Cr+",     Result = "CARDIAC_PLUS" },
+                    // 56-65
+                    new GridCell { RowValue = "56-65", ColValue = "0-5L",     Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "56-65", ColValue = "5L-15L",   Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "56-65", ColValue = "15L-50L",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "56-65", ColValue = "50L-1Cr",  Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "56-65", ColValue = "1Cr-5Cr",  Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "56-65", ColValue = "5Cr+",     Result = "CARDIAC_PLUS" }
+                },
+                Products = new List<string> { "term_life" },
+                EscalationFactors = new List<GridEscalationFactor>
+                {
+                    new GridEscalationFactor { Factor = "smoker", Description = "Smoker escalation: move one column right", EscalationResult = "ESCALATE_ONE_COL" },
+                    new GridEscalationFactor { Factor = "bmi_high", Description = "BMI > 30: escalate to at least BASIC_BLOOD", EscalationResult = "BASIC_BLOOD" },
+                    new GridEscalationFactor { Factor = "diabetes", Description = "Diabetes: escalate to FULL_MEDICAL minimum", EscalationResult = "FULL_MEDICAL" },
+                    new GridEscalationFactor { Factor = "hypertension", Description = "Hypertension: escalate to FULL_MEDICAL minimum", EscalationResult = "FULL_MEDICAL" },
+                    new GridEscalationFactor { Factor = "family_history", Description = "Family medical history: escalate one level", EscalationResult = "ESCALATE_ONE_COL" },
+                    new GridEscalationFactor { Factor = "large_existing_cover", Description = "Existing cover > 1Cr: escalate to CARDIAC_PLUS", EscalationResult = "CARDIAC_PLUS" }
+                },
+                CreatedAt = now, UpdatedAt = now
+            },
+            new Grid
+            {
+                Name = "medical_endowment_age_sa",
+                Description = "Medical requirements grid for Endowment by age band vs sum assured",
+                GridType = "medical",
+                RowField = "applicant_age",
+                ColField = "sum_assured",
+                RowLabels = new List<string> { "18-25", "26-35", "36-45", "46-55" },
+                ColLabels = new List<string> { "0-5L", "5L-15L", "15L-50L", "50L-1Cr", "1Cr+" },
+                Cells = new List<GridCell>
+                {
+                    new GridCell { RowValue = "18-25", ColValue = "0-5L",    Result = "NON_MED" },
+                    new GridCell { RowValue = "18-25", ColValue = "5L-15L",  Result = "NON_MED" },
+                    new GridCell { RowValue = "18-25", ColValue = "15L-50L", Result = "BASIC_VITALS" },
+                    new GridCell { RowValue = "18-25", ColValue = "50L-1Cr", Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "18-25", ColValue = "1Cr+",    Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "26-35", ColValue = "0-5L",    Result = "NON_MED" },
+                    new GridCell { RowValue = "26-35", ColValue = "5L-15L",  Result = "BASIC_VITALS" },
+                    new GridCell { RowValue = "26-35", ColValue = "15L-50L", Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "26-35", ColValue = "50L-1Cr", Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "26-35", ColValue = "1Cr+",    Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "36-45", ColValue = "0-5L",    Result = "BASIC_VITALS" },
+                    new GridCell { RowValue = "36-45", ColValue = "5L-15L",  Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "36-45", ColValue = "15L-50L", Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "36-45", ColValue = "50L-1Cr", Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "36-45", ColValue = "1Cr+",    Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "46-55", ColValue = "0-5L",    Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "46-55", ColValue = "5L-15L",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "46-55", ColValue = "15L-50L", Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "46-55", ColValue = "50L-1Cr", Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "46-55", ColValue = "1Cr+",    Result = "CARDIAC_PLUS" }
+                },
+                Products = new List<string> { "endowment" },
+                EscalationFactors = new List<GridEscalationFactor>
+                {
+                    new GridEscalationFactor { Factor = "smoker", Description = "Smoker escalation: move one column right", EscalationResult = "ESCALATE_ONE_COL" },
+                    new GridEscalationFactor { Factor = "bmi_high", Description = "BMI > 30: escalate to at least BASIC_BLOOD", EscalationResult = "BASIC_BLOOD" },
+                    new GridEscalationFactor { Factor = "diabetes", Description = "Diabetes: escalate to FULL_MEDICAL minimum", EscalationResult = "FULL_MEDICAL" },
+                    new GridEscalationFactor { Factor = "hypertension", Description = "Hypertension: escalate to FULL_MEDICAL minimum", EscalationResult = "FULL_MEDICAL" }
+                },
+                CreatedAt = now, UpdatedAt = now
+            },
+            new Grid
+            {
+                Name = "medical_ulip_age_ape",
+                Description = "Medical requirements grid for ULIP by age band vs annualised premium equivalent",
+                GridType = "medical",
+                RowField = "applicant_age",
+                ColField = "annual_premium",
+                RowLabels = new List<string> { "18-25", "26-35", "36-45", "46-60" },
+                ColLabels = new List<string> { "0-50K", "50K-1L", "1L-3L", "3L-5L", "5L+" },
+                Cells = new List<GridCell>
+                {
+                    new GridCell { RowValue = "18-25", ColValue = "0-50K",  Result = "NON_MED" },
+                    new GridCell { RowValue = "18-25", ColValue = "50K-1L", Result = "NON_MED" },
+                    new GridCell { RowValue = "18-25", ColValue = "1L-3L",  Result = "BASIC_VITALS" },
+                    new GridCell { RowValue = "18-25", ColValue = "3L-5L",  Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "18-25", ColValue = "5L+",    Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "26-35", ColValue = "0-50K",  Result = "NON_MED" },
+                    new GridCell { RowValue = "26-35", ColValue = "50K-1L", Result = "BASIC_VITALS" },
+                    new GridCell { RowValue = "26-35", ColValue = "1L-3L",  Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "26-35", ColValue = "3L-5L",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "26-35", ColValue = "5L+",    Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "36-45", ColValue = "0-50K",  Result = "BASIC_VITALS" },
+                    new GridCell { RowValue = "36-45", ColValue = "50K-1L", Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "36-45", ColValue = "1L-3L",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "36-45", ColValue = "3L-5L",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "36-45", ColValue = "5L+",    Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "46-60", ColValue = "0-50K",  Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "46-60", ColValue = "50K-1L", Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "46-60", ColValue = "1L-3L",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "46-60", ColValue = "3L-5L",  Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "46-60", ColValue = "5L+",    Result = "CARDIAC_PLUS" }
+                },
+                Products = new List<string> { "ulip" },
+                EscalationFactors = new List<GridEscalationFactor>
+                {
+                    new GridEscalationFactor { Factor = "smoker", Description = "Smoker escalation: move one column right", EscalationResult = "ESCALATE_ONE_COL" },
+                    new GridEscalationFactor { Factor = "diabetes", Description = "Diabetes: escalate to FULL_MEDICAL minimum", EscalationResult = "FULL_MEDICAL" }
+                },
+                CreatedAt = now, UpdatedAt = now
+            },
+            new Grid
+            {
+                Name = "medical_health_age_si",
+                Description = "Medical requirements grid for Health by age band vs sum insured (morbidity focus)",
+                GridType = "medical",
+                RowField = "applicant_age",
+                ColField = "sum_assured",
+                RowLabels = new List<string> { "18-30", "31-40", "41-50", "51-60", "61-65" },
+                ColLabels = new List<string> { "0-3L", "3L-5L", "5L-10L", "10L-25L", "25L-50L", "50L+" },
+                Cells = new List<GridCell>
+                {
+                    new GridCell { RowValue = "18-30", ColValue = "0-3L",    Result = "NON_MED" },
+                    new GridCell { RowValue = "18-30", ColValue = "3L-5L",   Result = "NON_MED" },
+                    new GridCell { RowValue = "18-30", ColValue = "5L-10L",  Result = "BASIC_VITALS" },
+                    new GridCell { RowValue = "18-30", ColValue = "10L-25L", Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "18-30", ColValue = "25L-50L", Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "18-30", ColValue = "50L+",    Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "31-40", ColValue = "0-3L",    Result = "NON_MED" },
+                    new GridCell { RowValue = "31-40", ColValue = "3L-5L",   Result = "BASIC_VITALS" },
+                    new GridCell { RowValue = "31-40", ColValue = "5L-10L",  Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "31-40", ColValue = "10L-25L", Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "31-40", ColValue = "25L-50L", Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "31-40", ColValue = "50L+",    Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "41-50", ColValue = "0-3L",    Result = "BASIC_VITALS" },
+                    new GridCell { RowValue = "41-50", ColValue = "3L-5L",   Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "41-50", ColValue = "5L-10L",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "41-50", ColValue = "10L-25L", Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "41-50", ColValue = "25L-50L", Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "41-50", ColValue = "50L+",    Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "51-60", ColValue = "0-3L",    Result = "BASIC_BLOOD" },
+                    new GridCell { RowValue = "51-60", ColValue = "3L-5L",   Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "51-60", ColValue = "5L-10L",  Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "51-60", ColValue = "10L-25L", Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "51-60", ColValue = "25L-50L", Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "51-60", ColValue = "50L+",    Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "61-65", ColValue = "0-3L",    Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "61-65", ColValue = "3L-5L",   Result = "FULL_MEDICAL" },
+                    new GridCell { RowValue = "61-65", ColValue = "5L-10L",  Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "61-65", ColValue = "10L-25L", Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "61-65", ColValue = "25L-50L", Result = "CARDIAC_PLUS" },
+                    new GridCell { RowValue = "61-65", ColValue = "50L+",    Result = "CARDIAC_PLUS" }
+                },
+                Products = new List<string> { "health" },
+                EscalationFactors = new List<GridEscalationFactor>
+                {
+                    new GridEscalationFactor { Factor = "smoker", Description = "Smoker: escalate one level", EscalationResult = "ESCALATE_ONE_COL" },
+                    new GridEscalationFactor { Factor = "bmi_high", Description = "BMI > 30: escalate to BASIC_BLOOD minimum", EscalationResult = "BASIC_BLOOD" },
+                    new GridEscalationFactor { Factor = "diabetes", Description = "Diabetes: escalate to FULL_MEDICAL, morbidity review", EscalationResult = "FULL_MEDICAL" },
+                    new GridEscalationFactor { Factor = "hypertension", Description = "Hypertension: escalate to FULL_MEDICAL", EscalationResult = "FULL_MEDICAL" },
+                    new GridEscalationFactor { Factor = "family_history", Description = "Family medical history: escalate one level", EscalationResult = "ESCALATE_ONE_COL" }
+                },
+                CreatedAt = now, UpdatedAt = now
+            },
+
+            // ── FINANCIAL GRIDS ────────────────────────────────────────────
+            new Grid
+            {
+                Name = "financial_term_age_income",
+                Description = "Financial underwriting grid for Term Life by age band vs income multiple (SA/Income)",
+                GridType = "financial",
+                RowField = "applicant_age",
+                ColField = "income_multiple",
+                RowLabels = new List<string> { "18-25", "26-35", "36-45", "46-55", "56-65" },
+                ColLabels = new List<string> { "0-5x", "5-10x", "10-15x", "15-20x", "20x+" },
+                Cells = new List<GridCell>
+                {
+                    new GridCell { RowValue = "18-25", ColValue = "0-5x",   Result = "AUTO_OK" },
+                    new GridCell { RowValue = "18-25", ColValue = "5-10x",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "18-25", ColValue = "10-15x", Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "18-25", ColValue = "15-20x", Result = "REFER_UW" },
+                    new GridCell { RowValue = "18-25", ColValue = "20x+",   Result = "DECLINE" },
+                    new GridCell { RowValue = "26-35", ColValue = "0-5x",   Result = "AUTO_OK" },
+                    new GridCell { RowValue = "26-35", ColValue = "5-10x",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "26-35", ColValue = "10-15x", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "26-35", ColValue = "15-20x", Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "26-35", ColValue = "20x+",   Result = "REFER_UW" },
+                    new GridCell { RowValue = "36-45", ColValue = "0-5x",   Result = "AUTO_OK" },
+                    new GridCell { RowValue = "36-45", ColValue = "5-10x",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "36-45", ColValue = "10-15x", Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "36-45", ColValue = "15-20x", Result = "REFER_UW" },
+                    new GridCell { RowValue = "36-45", ColValue = "20x+",   Result = "DECLINE" },
+                    new GridCell { RowValue = "46-55", ColValue = "0-5x",   Result = "AUTO_OK" },
+                    new GridCell { RowValue = "46-55", ColValue = "5-10x",  Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "46-55", ColValue = "10-15x", Result = "REFER_UW" },
+                    new GridCell { RowValue = "46-55", ColValue = "15-20x", Result = "DECLINE" },
+                    new GridCell { RowValue = "46-55", ColValue = "20x+",   Result = "DECLINE" },
+                    new GridCell { RowValue = "56-65", ColValue = "0-5x",   Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "56-65", ColValue = "5-10x",  Result = "REFER_UW" },
+                    new GridCell { RowValue = "56-65", ColValue = "10-15x", Result = "DECLINE" },
+                    new GridCell { RowValue = "56-65", ColValue = "15-20x", Result = "DECLINE" },
+                    new GridCell { RowValue = "56-65", ColValue = "20x+",   Result = "DECLINE" }
+                },
+                Products = new List<string> { "term_life" },
+                EscalationFactors = new List<GridEscalationFactor>
+                {
+                    new GridEscalationFactor { Factor = "cumulative_cover", Description = "Existing + new SA exceeds income multiple limit: escalate one level", EscalationResult = "ESCALATE_ONE_COL" },
+                    new GridEscalationFactor { Factor = "proposer_relationship", Description = "Proposer is not self and corporate: require NEED_PROOF minimum", EscalationResult = "NEED_PROOF" }
+                },
+                CreatedAt = now, UpdatedAt = now
+            },
+            new Grid
+            {
+                Name = "financial_endowment_age_income",
+                Description = "Financial underwriting grid for Endowment by age band vs income multiple (includes premium affordability)",
+                GridType = "financial",
+                RowField = "applicant_age",
+                ColField = "income_multiple",
+                RowLabels = new List<string> { "18-25", "26-35", "36-45", "46-55" },
+                ColLabels = new List<string> { "0-5x", "5-10x", "10-15x", "15x+" },
+                Cells = new List<GridCell>
+                {
+                    new GridCell { RowValue = "18-25", ColValue = "0-5x",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "18-25", ColValue = "5-10x", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "18-25", ColValue = "10-15x",Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "18-25", ColValue = "15x+",  Result = "REFER_UW" },
+                    new GridCell { RowValue = "26-35", ColValue = "0-5x",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "26-35", ColValue = "5-10x", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "26-35", ColValue = "10-15x",Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "26-35", ColValue = "15x+",  Result = "REFER_UW" },
+                    new GridCell { RowValue = "36-45", ColValue = "0-5x",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "36-45", ColValue = "5-10x", Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "36-45", ColValue = "10-15x",Result = "REFER_UW" },
+                    new GridCell { RowValue = "36-45", ColValue = "15x+",  Result = "DECLINE" },
+                    new GridCell { RowValue = "46-55", ColValue = "0-5x",  Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "46-55", ColValue = "5-10x", Result = "REFER_UW" },
+                    new GridCell { RowValue = "46-55", ColValue = "10-15x",Result = "DECLINE" },
+                    new GridCell { RowValue = "46-55", ColValue = "15x+",  Result = "DECLINE" }
+                },
+                Products = new List<string> { "endowment" },
+                EscalationFactors = new List<GridEscalationFactor>
+                {
+                    new GridEscalationFactor { Factor = "premium_affordability", Description = "Annual premium > 30% income: escalate to NEED_PROOF minimum", EscalationResult = "NEED_PROOF" },
+                    new GridEscalationFactor { Factor = "cumulative_cover", Description = "Existing + new SA exceeds income multiple: escalate one level", EscalationResult = "ESCALATE_ONE_COL" }
+                },
+                CreatedAt = now, UpdatedAt = now
+            },
+            new Grid
+            {
+                Name = "financial_ulip_age_ape",
+                Description = "Financial underwriting grid for ULIP by age band vs APE/income ratio (suitability check)",
+                GridType = "financial",
+                RowField = "applicant_age",
+                ColField = "ape_income_ratio",
+                RowLabels = new List<string> { "18-25", "26-35", "36-45", "46-60" },
+                ColLabels = new List<string> { "0-10%", "10-20%", "20-30%", "30-40%", "40%+" },
+                Cells = new List<GridCell>
+                {
+                    new GridCell { RowValue = "18-25", ColValue = "0-10%",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "18-25", ColValue = "10-20%", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "18-25", ColValue = "20-30%", Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "18-25", ColValue = "30-40%", Result = "REFER_UW" },
+                    new GridCell { RowValue = "18-25", ColValue = "40%+",   Result = "DECLINE" },
+                    new GridCell { RowValue = "26-35", ColValue = "0-10%",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "26-35", ColValue = "10-20%", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "26-35", ColValue = "20-30%", Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "26-35", ColValue = "30-40%", Result = "REFER_UW" },
+                    new GridCell { RowValue = "26-35", ColValue = "40%+",   Result = "DECLINE" },
+                    new GridCell { RowValue = "36-45", ColValue = "0-10%",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "36-45", ColValue = "10-20%", Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "36-45", ColValue = "20-30%", Result = "REFER_UW" },
+                    new GridCell { RowValue = "36-45", ColValue = "30-40%", Result = "DECLINE" },
+                    new GridCell { RowValue = "36-45", ColValue = "40%+",   Result = "DECLINE" },
+                    new GridCell { RowValue = "46-60", ColValue = "0-10%",  Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "46-60", ColValue = "10-20%", Result = "REFER_UW" },
+                    new GridCell { RowValue = "46-60", ColValue = "20-30%", Result = "DECLINE" },
+                    new GridCell { RowValue = "46-60", ColValue = "30-40%", Result = "DECLINE" },
+                    new GridCell { RowValue = "46-60", ColValue = "40%+",   Result = "DECLINE" }
+                },
+                Products = new List<string> { "ulip" },
+                EscalationFactors = new List<GridEscalationFactor>
+                {
+                    new GridEscalationFactor { Factor = "premium_affordability", Description = "APE > 30% income: escalate to NEED_PROOF minimum (suitability check)", EscalationResult = "NEED_PROOF" },
+                    new GridEscalationFactor { Factor = "proposer_relationship", Description = "Proposer is not self: require NEED_PROOF minimum", EscalationResult = "NEED_PROOF" }
+                },
+                CreatedAt = now, UpdatedAt = now
+            },
+            new Grid
+            {
+                Name = "financial_health_income_si",
+                Description = "Financial underwriting grid for Health by income vs sum insured (morbidity-oriented)",
+                GridType = "financial",
+                RowField = "applicant_income",
+                ColField = "sum_assured",
+                RowLabels = new List<string> { "0-3L", "3L-5L", "5L-10L", "10L-25L", "25L+" },
+                ColLabels = new List<string> { "0-3L", "3L-5L", "5L-10L", "10L-25L", "25L-50L", "50L+" },
+                Cells = new List<GridCell>
+                {
+                    new GridCell { RowValue = "0-3L",   ColValue = "0-3L",    Result = "AUTO_OK" },
+                    new GridCell { RowValue = "0-3L",   ColValue = "3L-5L",   Result = "AUTO_OK" },
+                    new GridCell { RowValue = "0-3L",   ColValue = "5L-10L",  Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "0-3L",   ColValue = "10L-25L", Result = "REFER_UW" },
+                    new GridCell { RowValue = "0-3L",   ColValue = "25L-50L", Result = "DECLINE" },
+                    new GridCell { RowValue = "0-3L",   ColValue = "50L+",    Result = "DECLINE" },
+                    new GridCell { RowValue = "3L-5L",  ColValue = "0-3L",    Result = "AUTO_OK" },
+                    new GridCell { RowValue = "3L-5L",  ColValue = "3L-5L",   Result = "AUTO_OK" },
+                    new GridCell { RowValue = "3L-5L",  ColValue = "5L-10L",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "3L-5L",  ColValue = "10L-25L", Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "3L-5L",  ColValue = "25L-50L", Result = "REFER_UW" },
+                    new GridCell { RowValue = "3L-5L",  ColValue = "50L+",    Result = "DECLINE" },
+                    new GridCell { RowValue = "5L-10L", ColValue = "0-3L",    Result = "AUTO_OK" },
+                    new GridCell { RowValue = "5L-10L", ColValue = "3L-5L",   Result = "AUTO_OK" },
+                    new GridCell { RowValue = "5L-10L", ColValue = "5L-10L",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "5L-10L", ColValue = "10L-25L", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "5L-10L", ColValue = "25L-50L", Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "5L-10L", ColValue = "50L+",    Result = "REFER_UW" },
+                    new GridCell { RowValue = "10L-25L",ColValue = "0-3L",    Result = "AUTO_OK" },
+                    new GridCell { RowValue = "10L-25L",ColValue = "3L-5L",   Result = "AUTO_OK" },
+                    new GridCell { RowValue = "10L-25L",ColValue = "5L-10L",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "10L-25L",ColValue = "10L-25L", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "10L-25L",ColValue = "25L-50L", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "10L-25L",ColValue = "50L+",    Result = "NEED_PROOF" },
+                    new GridCell { RowValue = "25L+",   ColValue = "0-3L",    Result = "AUTO_OK" },
+                    new GridCell { RowValue = "25L+",   ColValue = "3L-5L",   Result = "AUTO_OK" },
+                    new GridCell { RowValue = "25L+",   ColValue = "5L-10L",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "25L+",   ColValue = "10L-25L", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "25L+",   ColValue = "25L-50L", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "25L+",   ColValue = "50L+",    Result = "AUTO_OK" }
+                },
+                Products = new List<string> { "health" },
+                EscalationFactors = new List<GridEscalationFactor>
+                {
+                    new GridEscalationFactor { Factor = "cumulative_cover", Description = "Existing health cover + new SI combined check", EscalationResult = "ESCALATE_ONE_COL" },
+                    new GridEscalationFactor { Factor = "proposer_relationship", Description = "Non-self proposer with corporate: require income proof", EscalationResult = "NEED_PROOF" }
+                },
+                CreatedAt = now, UpdatedAt = now
+            },
+
+            // ── OCCUPATIONAL GRIDS ─────────────────────────────────────────
+            new Grid
+            {
+                Name = "occupational_life_class_sa",
+                Description = "Occupational underwriting grid for Life products by occupation class vs sum assured",
+                GridType = "occupational",
+                RowField = "occupation_class",
+                ColField = "sum_assured",
+                RowLabels = new List<string> { "class_1", "class_2", "class_3", "class_4", "hazardous" },
+                ColLabels = new List<string> { "0-10L", "10L-25L", "25L-50L", "50L-1Cr", "1Cr+" },
+                Cells = new List<GridCell>
+                {
+                    new GridCell { RowValue = "class_1",   ColValue = "0-10L",   Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_1",   ColValue = "10L-25L", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_1",   ColValue = "25L-50L", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_1",   ColValue = "50L-1Cr", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_1",   ColValue = "1Cr+",    Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_2",   ColValue = "0-10L",   Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_2",   ColValue = "10L-25L", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_2",   ColValue = "25L-50L", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_2",   ColValue = "50L-1Cr", Result = "LOADING_25",    Tooltip = "25% occupational loading" },
+                    new GridCell { RowValue = "class_2",   ColValue = "1Cr+",    Result = "LOADING_25",    Tooltip = "25% occupational loading" },
+                    new GridCell { RowValue = "class_3",   ColValue = "0-10L",   Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_3",   ColValue = "10L-25L", Result = "LOADING_25",    Tooltip = "25% occupational loading" },
+                    new GridCell { RowValue = "class_3",   ColValue = "25L-50L", Result = "LOADING_50",    Tooltip = "50% occupational loading" },
+                    new GridCell { RowValue = "class_3",   ColValue = "50L-1Cr", Result = "NEED_OCC_DETAILS" },
+                    new GridCell { RowValue = "class_3",   ColValue = "1Cr+",    Result = "REFER_UW" },
+                    new GridCell { RowValue = "class_4",   ColValue = "0-10L",   Result = "LOADING_25",    Tooltip = "25% occupational loading" },
+                    new GridCell { RowValue = "class_4",   ColValue = "10L-25L", Result = "LOADING_50",    Tooltip = "50% occupational loading" },
+                    new GridCell { RowValue = "class_4",   ColValue = "25L-50L", Result = "NEED_OCC_DETAILS" },
+                    new GridCell { RowValue = "class_4",   ColValue = "50L-1Cr", Result = "REFER_UW" },
+                    new GridCell { RowValue = "class_4",   ColValue = "1Cr+",    Result = "DECLINE" },
+                    new GridCell { RowValue = "hazardous", ColValue = "0-10L",   Result = "NEED_OCC_DETAILS" },
+                    new GridCell { RowValue = "hazardous", ColValue = "10L-25L", Result = "REFER_UW" },
+                    new GridCell { RowValue = "hazardous", ColValue = "25L-50L", Result = "REFER_UW" },
+                    new GridCell { RowValue = "hazardous", ColValue = "50L-1Cr", Result = "DECLINE" },
+                    new GridCell { RowValue = "hazardous", ColValue = "1Cr+",    Result = "DECLINE" }
+                },
+                Products = new List<string> { "term_life", "endowment", "ulip" },
+                EscalationFactors = new List<GridEscalationFactor>
+                {
+                    new GridEscalationFactor { Factor = "high_sa_escalation", Description = "SA > 1Cr for class 3+: escalate to REFER_UW", EscalationResult = "REFER_UW" },
+                    new GridEscalationFactor { Factor = "hazardous_occupation", Description = "Hazardous occupation: always require occupation details", EscalationResult = "NEED_OCC_DETAILS" }
+                },
+                CreatedAt = now, UpdatedAt = now
+            },
+            new Grid
+            {
+                Name = "occupational_health_class_si",
+                Description = "Occupational underwriting grid for Health products by occupation class vs sum insured",
+                GridType = "occupational",
+                RowField = "occupation_class",
+                ColField = "sum_assured",
+                RowLabels = new List<string> { "class_1", "class_2", "class_3", "class_4", "hazardous" },
+                ColLabels = new List<string> { "0-5L", "5L-10L", "10L-25L", "25L-50L", "50L+" },
+                Cells = new List<GridCell>
+                {
+                    new GridCell { RowValue = "class_1",   ColValue = "0-5L",    Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_1",   ColValue = "5L-10L",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_1",   ColValue = "10L-25L", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_1",   ColValue = "25L-50L", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_1",   ColValue = "50L+",    Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_2",   ColValue = "0-5L",    Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_2",   ColValue = "5L-10L",  Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_2",   ColValue = "10L-25L", Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_2",   ColValue = "25L-50L", Result = "LOADING_25",    Tooltip = "25% occupational loading" },
+                    new GridCell { RowValue = "class_2",   ColValue = "50L+",    Result = "LOADING_25",    Tooltip = "25% occupational loading" },
+                    new GridCell { RowValue = "class_3",   ColValue = "0-5L",    Result = "AUTO_OK" },
+                    new GridCell { RowValue = "class_3",   ColValue = "5L-10L",  Result = "LOADING_25",    Tooltip = "25% loading" },
+                    new GridCell { RowValue = "class_3",   ColValue = "10L-25L", Result = "LOADING_50",    Tooltip = "50% loading" },
+                    new GridCell { RowValue = "class_3",   ColValue = "25L-50L", Result = "NEED_OCC_DETAILS" },
+                    new GridCell { RowValue = "class_3",   ColValue = "50L+",    Result = "REFER_UW" },
+                    new GridCell { RowValue = "class_4",   ColValue = "0-5L",    Result = "LOADING_25",    Tooltip = "25% loading" },
+                    new GridCell { RowValue = "class_4",   ColValue = "5L-10L",  Result = "LOADING_50",    Tooltip = "50% loading" },
+                    new GridCell { RowValue = "class_4",   ColValue = "10L-25L", Result = "NEED_OCC_DETAILS" },
+                    new GridCell { RowValue = "class_4",   ColValue = "25L-50L", Result = "REFER_UW" },
+                    new GridCell { RowValue = "class_4",   ColValue = "50L+",    Result = "DECLINE" },
+                    new GridCell { RowValue = "hazardous", ColValue = "0-5L",    Result = "NEED_OCC_DETAILS" },
+                    new GridCell { RowValue = "hazardous", ColValue = "5L-10L",  Result = "REFER_UW" },
+                    new GridCell { RowValue = "hazardous", ColValue = "10L-25L", Result = "REFER_UW" },
+                    new GridCell { RowValue = "hazardous", ColValue = "25L-50L", Result = "DECLINE" },
+                    new GridCell { RowValue = "hazardous", ColValue = "50L+",    Result = "DECLINE" }
+                },
+                Products = new List<string> { "health" },
+                EscalationFactors = new List<GridEscalationFactor>
+                {
+                    new GridEscalationFactor { Factor = "high_sa_escalation", Description = "SI > 25L for class 3+: escalate to REFER_UW", EscalationResult = "REFER_UW" },
+                    new GridEscalationFactor { Factor = "hazardous_occupation", Description = "Hazardous occupation: always require occupation details", EscalationResult = "NEED_OCC_DETAILS" }
+                },
+                CreatedAt = now, UpdatedAt = now
+            }
+        };
+    }
 }

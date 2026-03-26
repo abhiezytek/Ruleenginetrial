@@ -51,6 +51,19 @@ export const api = {
   getDashboardStats: () => client.get('/api/dashboard/stats'),
   evaluate: (proposalData) => client.post('/api/underwriting/evaluate', proposalData),
   evaluateBatch: (proposals) => client.post('/api/underwriting/evaluate-batch', proposals),
+
+  // Grids
+  getGrids: (params) => client.get('/api/grids', { params }),
+  getGrid: (id) => client.get(`/api/grids/${id}`),
+  createGrid: (data) => client.post('/api/grids', data),
+  updateGrid: (id, data) => client.put(`/api/grids/${id}`, data),
+  deleteGrid: (id) => client.delete(`/api/grids/${id}`),
+  getGridsByProduct: (productType) => client.get(`/api/grids/by-product/${productType}`),
+  getGridsByType: (gridType) => client.get(`/api/grids/by-type/${gridType}`),
+  seedDefaultGrids: () => client.post('/api/grids/seed-defaults'),
+
+  // Products
+  getProducts: (params) => client.get('/api/products', { params }),
 };
 
 export default api;

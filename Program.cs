@@ -165,6 +165,8 @@ using (var scope = app.Services.CreateScope())
         catch (Exception ex) { dbLogger.LogDebug("ALTER TABLE evaluations letter_flags: {Msg} (expected if column exists)", ex.Message); }
         try { context.Database.ExecuteSqlRaw("ALTER TABLE evaluations ADD COLUMN follow_up_codes TEXT DEFAULT '[]'"); }
         catch (Exception ex) { dbLogger.LogDebug("ALTER TABLE evaluations follow_up_codes: {Msg} (expected if column exists)", ex.Message); }
+        try { context.Database.ExecuteSqlRaw("ALTER TABLE grids ADD COLUMN escalation_factors TEXT DEFAULT '[]'"); }
+        catch (Exception ex) { dbLogger.LogDebug("ALTER TABLE grids escalation_factors: {Msg} (expected if column exists)", ex.Message); }
     }
     catch (Exception ex)
     {

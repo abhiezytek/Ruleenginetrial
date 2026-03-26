@@ -7,6 +7,7 @@ import Evaluate from './pages/Evaluate';
 import EvaluationHistory from './pages/EvaluationHistory';
 import Rules from './pages/Rules';
 import Templates from './pages/Templates';
+import ProductConfiguration from './pages/ProductConfiguration';
 
 // Migrate legacy localStorage keys from the old "AccuRule" name to "Criterion"
 function migrateLocalStorage() {
@@ -57,6 +58,7 @@ function App() {
         <Route path="history" element={<EvaluationHistory />} />
         <Route path="rules" element={<Rules />} />
         <Route path="templates" element={<Templates />} />
+        <Route path="product-config" element={<ProductConfiguration />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

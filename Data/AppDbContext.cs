@@ -102,6 +102,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Grid>().Property(g => g.ColLabelsJson).HasColumnName("col_labels");
         modelBuilder.Entity<Grid>().Property(g => g.CellsJson).HasColumnName("cells");
         modelBuilder.Entity<Grid>().Property(g => g.ProductsJson).HasColumnName("products");
+        modelBuilder.Entity<Grid>().Property(g => g.EscalationFactorsJson).HasColumnName("escalation_factors");
         modelBuilder.Entity<Grid>().Property(g => g.IsEnabled).HasColumnName("is_enabled");
         modelBuilder.Entity<Grid>().Property(g => g.CreatedAt).HasColumnName("created_at");
         modelBuilder.Entity<Grid>().Property(g => g.UpdatedAt).HasColumnName("updated_at");

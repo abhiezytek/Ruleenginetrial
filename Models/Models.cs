@@ -34,7 +34,8 @@ public enum ProductType
 {
     term_life,
     endowment,
-    ulip
+    ulip,
+    health
 }
 
 public enum CaseType
@@ -191,6 +192,9 @@ public class Grid
     [Column(TypeName = "TEXT")]
     public string ProductsJson { get; set; } = "[]";
 
+    [Column(TypeName = "TEXT")]
+    public string EscalationFactorsJson { get; set; } = "[]";
+
     public bool IsEnabled { get; set; } = true;
 
     public string CreatedAt { get; set; } = DateTime.UtcNow.ToString("o");
@@ -223,6 +227,13 @@ public class Grid
     {
         get => JsonSerializer.Deserialize<List<string>>(ProductsJson, JsonOptions.SnakeCase) ?? new List<string>();
         set => ProductsJson = JsonSerializer.Serialize(value, JsonOptions.SnakeCase);
+    }
+
+    [NotMapped]
+    public List<GridEscalationFactor> EscalationFactors
+    {
+        get => JsonSerializer.Deserialize<List<GridEscalationFactor>>(EscalationFactorsJson, JsonOptions.SnakeCase) ?? new List<GridEscalationFactor>();
+        set => EscalationFactorsJson = JsonSerializer.Serialize(value, JsonOptions.SnakeCase);
     }
 }
 
@@ -422,6 +433,14 @@ public class GridCell
     public string ColValue { get; set; } = string.Empty;
     public string Result { get; set; } = "ACCEPT";
     public int? ScoreImpact { get; set; }
+    public string? Tooltip { get; set; }
+}
+
+public class GridEscalationFactor
+{
+    public string Factor { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string EscalationResult { get; set; } = "REFER_UW";
 }
 
 public class ProposalData
@@ -655,6 +674,7 @@ public class GridCreateDto
     public List<string> ColLabels { get; set; } = new();
     public List<GridCell> Cells { get; set; } = new();
     public List<string> Products { get; set; } = new();
+    public List<GridEscalationFactor> EscalationFactors { get; set; } = new();
     public bool IsEnabled { get; set; } = true;
 }
 
