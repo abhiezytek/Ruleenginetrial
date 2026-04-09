@@ -7,7 +7,6 @@ import Evaluate from './pages/Evaluate';
 import EvaluationHistory from './pages/EvaluationHistory';
 import Rules from './pages/Rules';
 import Templates from './pages/Templates';
-import RequirementPage from './features/requirement/index.tsx';
 
 // Migrate legacy localStorage keys from the old "AccuRule" name to "Criterion"
 function migrateLocalStorage() {
@@ -58,7 +57,6 @@ function App() {
         <Route path="history" element={<EvaluationHistory />} />
         <Route path="rules" element={<Rules />} />
         <Route path="templates" element={<Templates />} />
-        <Route path="requirements" element={<RequirementPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

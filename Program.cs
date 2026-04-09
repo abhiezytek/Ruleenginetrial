@@ -57,9 +57,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Auth Service
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// Requirement Master Service
-builder.Services.AddScoped<IRequirementMstService, RequirementMstService>();
-
 // Rule Engine
 builder.Services.AddSingleton<RuleEngine>();
 
@@ -161,18 +158,6 @@ using (var scope = app.Services.CreateScope())
                 performed_by TEXT NOT NULL,
                 performed_at TEXT               
             )");
-        context.Database.ExecuteSqlRaw(@"
-            CREATE TABLE IF NOT EXISTS requirement_mst (
-                id TEXT PRIMARY KEY,
-                code TEXT NOT NULL UNIQUE,
-                name TEXT NOT NULL,
-                description TEXT,
-                category TEXT NOT NULL DEFAULT 'Medical',
-                is_active INTEGER NOT NULL DEFAULT 1,
-                sort_order INTEGER NOT NULL DEFAULT 100,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            )");
 
         // Add new columns to evaluations table if they don't exist (for existing DBs created before these columns were added)
         var dbLogger = app.Logger;
@@ -194,23 +179,6 @@ using (var scope = app.Services.CreateScope())
 
     // Create rules from templates (idempotent - only adds new rules)
     RuleTemplateSeeder.SeedRulesFromTemplates(context);
-
-    // Seed requirement master data (idempotent)
-    if (!context.RequirementMsts.Any())
-    {
-        var now = DateTime.UtcNow.ToString("o");
-        context.RequirementMsts.AddRange(
-            new InsuranceSTP.Models.RequirementMst { Code = "MPN", Name = "Physical Medical Examination Report", Description = "Comprehensive physical medical examination report required from an approved medical examiner.", Category = "Medical", SortOrder = 10, CreatedAt = now, UpdatedAt = now },
-            new InsuranceSTP.Models.RequirementMst { Code = "MCE", Name = "CBC & ESR Blood Tests", Description = "Complete Blood Count (CBC) and Erythrocyte Sedimentation Rate (ESR) laboratory tests.", Category = "Medical", SortOrder = 20, CreatedAt = now, UpdatedAt = now },
-            new InsuranceSTP.Models.RequirementMst { Code = "TGQ", Name = "Transgender Questionnaire", Description = "Supplementary questionnaire for gender affirmation, required for RUW referral.", Category = "Questionnaire", SortOrder = 30, CreatedAt = now, UpdatedAt = now },
-            new InsuranceSTP.Models.RequirementMst { Code = "ECG", Name = "Electrocardiogram", Description = "Resting 12-lead ECG report from an approved cardiac diagnostics centre.", Category = "Medical", SortOrder = 40, CreatedAt = now, UpdatedAt = now },
-            new InsuranceSTP.Models.RequirementMst { Code = "HBA1C", Name = "HbA1c Test", Description = "Glycated haemoglobin test to assess average blood glucose over 3 months.", Category = "Medical", SortOrder = 50, CreatedAt = now, UpdatedAt = now },
-            new InsuranceSTP.Models.RequirementMst { Code = "LFT", Name = "Liver Function Test", Description = "Liver function panel including ALT, AST, bilirubin, and albumin levels.", Category = "Medical", SortOrder = 60, CreatedAt = now, UpdatedAt = now },
-            new InsuranceSTP.Models.RequirementMst { Code = "FinQ", Name = "Financial Questionnaire", Description = "Detailed financial background questionnaire for high sum-assured proposals.", Category = "Financial", SortOrder = 70, CreatedAt = now, UpdatedAt = now },
-            new InsuranceSTP.Models.RequirementMst { Code = "OcQ", Name = "Occupational Questionnaire", Description = "Questionnaire detailing occupational hazards and duties for high-risk occupations.", Category = "Questionnaire", SortOrder = 80, CreatedAt = now, UpdatedAt = now }
-        );
-        await context.SaveChangesAsync();
-    }
 }
 
 // Run on port 8001
