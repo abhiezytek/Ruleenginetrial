@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Search, RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../lib/api';
 
@@ -22,6 +22,17 @@ interface PagedResult {
   total_pages: number;
 }
 
+function toPagedResult(res: unknown): PagedResult {
+  const r = res as Partial<PagedResult>;
+  return {
+    items: Array.isArray(r?.items) ? r.items : [],
+    total_count: r?.total_count ?? 0,
+    page: r?.page ?? 1,
+    page_size: r?.page_size ?? 10,
+    total_pages: r?.total_pages ?? 1,
+  };
+}
+
 const CATEGORY_COLORS: Record<string, string> = {
   Medical: 'bg-blue-50 text-blue-700 border-blue-200',
   Financial: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -38,32 +49,36 @@ export default function RequirementPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const fetchData = (pg = page) => {
-    setLoading(true);
-    setError(null);
-    const params: Record<string, string | number | boolean> = { page: pg, page_size: pageSize };
-    if (search) params.search = search;
-    if (categoryFilter) params.category = categoryFilter;
-    if (activeFilter !== '') params.is_active = activeFilter === 'active';
+  const fetchData = useCallback(
+    (pg: number, searchVal: string, catVal: string, activeVal: string) => {
+      setLoading(true);
+      setError(null);
+      const params: Record<string, string | number | boolean> = { page: pg, page_size: pageSize };
+      if (searchVal) params.search = searchVal;
+      if (catVal) params.category = catVal;
+      if (activeVal !== '') params.is_active = activeVal === 'active';
 
-    api
-      .getRequirements(params)
-      .then((res: PagedResult) => setData(res))
-      .catch((e: unknown) => {
-        const err = e as { message?: string };
-        setError(String(err?.message ?? e));
-      })
-      .finally(() => setLoading(false));
-  };
+      api
+        .getRequirements(params)
+        .then((res: unknown) => setData(toPagedResult(res)))
+        .catch((e: unknown) => {
+          const err = e as { message?: string };
+          setError(String(err?.message ?? e));
+        })
+        .finally(() => setLoading(false));
+    },
+    []
+  );
 
   useEffect(() => {
-    fetchData(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchData(page, search, categoryFilter, activeFilter);
+  // page changes trigger a re-fetch while keeping current filter values
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const handleSearch = () => {
     setPage(1);
-    fetchData(1);
+    fetchData(1, search, categoryFilter, activeFilter);
   };
 
   const handleReset = () => {
@@ -71,16 +86,7 @@ export default function RequirementPage() {
     setCategoryFilter('');
     setActiveFilter('');
     setPage(1);
-    setLoading(true);
-    setError(null);
-    api
-      .getRequirements({ page: 1, page_size: pageSize })
-      .then((res: PagedResult) => setData(res))
-      .catch((e: unknown) => {
-        const err = e as { message?: string };
-        setError(String(err?.message ?? e));
-      })
-      .finally(() => setLoading(false));
+    fetchData(1, '', '', '');
   };
 
   const items = data?.items ?? [];
@@ -199,7 +205,7 @@ export default function RequirementPage() {
                       </td>
                       <td className="px-4 py-3 text-gray-800 font-medium">{item.name}</td>
                       <td className="px-4 py-3 text-gray-500 hidden md:table-cell max-w-xs truncate">
-                        {item.description ?? <span className="text-gray-300">—</span>}
+                        {item.description ?? '—'}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold border ${catClass}`}>

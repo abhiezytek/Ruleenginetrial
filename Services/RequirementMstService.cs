@@ -24,11 +24,11 @@ public class RequirementMstService : IRequirementMstService
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var q = search.ToLower();
+            var pattern = $"%{search}%";
             query = query.Where(r =>
-                r.Code.ToLower().Contains(q) ||
-                r.Name.ToLower().Contains(q) ||
-                (r.Description != null && r.Description.ToLower().Contains(q)));
+                EF.Functions.Like(r.Code, pattern) ||
+                EF.Functions.Like(r.Name, pattern) ||
+                (r.Description != null && EF.Functions.Like(r.Description, pattern)));
         }
 
         if (!string.IsNullOrWhiteSpace(category))
