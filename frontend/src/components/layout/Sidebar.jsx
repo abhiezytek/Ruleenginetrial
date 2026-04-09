@@ -19,7 +19,8 @@ import {
   Users,
   FileText,
   LogOut,
-  User
+  User,
+  ClipboardList
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
@@ -50,6 +51,7 @@ const getNavigation = (hasPermission) => {
     // { name: 'Products', href: '/products', icon: Package },
     // { name: 'Users', href: '/users', icon: Users, permission: 'can_manage_users' },
     { name: 'Product Config', href: '/product-configuration', icon: Settings2 },
+    { name: 'Proposal Evaluator', href: '/proposal-evaluator', icon: ClipboardList },
     // { name: 'Evaluation New', href: '/evaluate-new', icon: PlayCircle },
   ];
   

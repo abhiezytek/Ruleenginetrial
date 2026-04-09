@@ -21,6 +21,7 @@ import Products from "./pages/Products";
 import UserManagement from "./pages/UserManagement";
 import Evaluate from "./pages/Evaluate";
 import ProductConfiguration from "./pages/ProductConfiguration";
+import ProposalEvaluator from "./pages/ProposalEvaluator";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requiredPermission }) => {
@@ -199,6 +200,12 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Layout><ProductConfiguration /></Layout>
+          </ProtectedRoute>} />
+      <Route
+        path="/proposal-evaluator"
+        element={
+          <ProtectedRoute>
+            <Layout><ProposalEvaluator /></Layout>
           </ProtectedRoute>} />
       {/* Catch all - redirect to home */}
       <Route path="*" element={<Navigate to="/" replace />} />

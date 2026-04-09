@@ -733,6 +733,112 @@ public class ApiController : ControllerBase
         return Ok(rules.Select(ToRuleResponse));
     }
 
+    // ── Proposals ─────────────────────────────────────────────────────────────
+    [HttpGet("proposals/by-policy/{policyNumber:long}")]
+    public async Task<IActionResult> GetProposalByPolicyNumber(long policyNumber)
+    {
+        var proposal = await _context.Proposals
+            .Where(p => p.PolicyNumber == policyNumber)
+            .OrderByDescending(p => p.UpdatedAt)
+            .FirstOrDefaultAsync();
+
+        if (proposal == null)
+            return NotFound(new { detail = $"No proposal found with policy number {policyNumber}" });
+
+        return Ok(proposal);
+    }
+
+    [HttpPost("proposals")]
+    public async Task<IActionResult> UpsertProposal([FromBody] Proposal incoming)
+    {
+        var existing = incoming.PolicyNumber.HasValue
+            ? await _context.Proposals.Where(p => p.PolicyNumber == incoming.PolicyNumber).FirstOrDefaultAsync()
+            : await _context.Proposals.Where(p => p.ProposalNumber == incoming.ProposalNumber).FirstOrDefaultAsync();
+
+        if (existing != null)
+        {
+            existing.ProposalNumber = incoming.ProposalNumber;
+            existing.PolicyNumber = incoming.PolicyNumber;
+            existing.ProductCode = incoming.ProductCode;
+            existing.ProductType = incoming.ProductType;
+            existing.ProductCategory = incoming.ProductCategory;
+            existing.PaymentMode = incoming.PaymentMode;
+            existing.ModeOfPurchase = incoming.ModeOfPurchase;
+            existing.PolicyTerm = incoming.PolicyTerm;
+            existing.PremiumPaymentTerm = incoming.PremiumPaymentTerm;
+            existing.ApplicantAge = incoming.ApplicantAge;
+            existing.ApplicantGender = incoming.ApplicantGender;
+            existing.ApplicantIncome = incoming.ApplicantIncome;
+            existing.ProposerIncome = incoming.ProposerIncome;
+            existing.SumAssured = incoming.SumAssured;
+            existing.Premium = incoming.Premium;
+            existing.ExistingCoverage = incoming.ExistingCoverage;
+            existing.Height = incoming.Height;
+            existing.Weight = incoming.Weight;
+            existing.Bmi = incoming.Bmi;
+            existing.IsSmoker = incoming.IsSmoker;
+            existing.CigarettesPerDay = incoming.CigarettesPerDay;
+            existing.SmokingYears = incoming.SmokingYears;
+            existing.IsAlcoholic = incoming.IsAlcoholic;
+            existing.AlcoholType = incoming.AlcoholType;
+            existing.AlcoholQuantity = incoming.AlcoholQuantity;
+            existing.HasMedicalHistory = incoming.HasMedicalHistory;
+            existing.AilmentType = incoming.AilmentType;
+            existing.AilmentDetails = incoming.AilmentDetails;
+            existing.AilmentDurationYears = incoming.AilmentDurationYears;
+            existing.IsAilmentOngoing = incoming.IsAilmentOngoing;
+            existing.IsAdventurous = incoming.IsAdventurous;
+            existing.OccupationCode = incoming.OccupationCode;
+            existing.OccupationClass = incoming.OccupationClass;
+            existing.OccupationRisk = incoming.OccupationRisk;
+            existing.IsOccupationHazardous = incoming.IsOccupationHazardous;
+            existing.AgentCode = incoming.AgentCode;
+            existing.AgentTier = incoming.AgentTier;
+            existing.Pincode = incoming.Pincode;
+            existing.IsNegativePincode = incoming.IsNegativePincode;
+            existing.AmlCategory = incoming.AmlCategory;
+            existing.RiskCategory = incoming.RiskCategory;
+            existing.IsPep = incoming.IsPep;
+            existing.IsCriminallyConvicted = incoming.IsCriminallyConvicted;
+            existing.IsOfac = incoming.IsOfac;
+            existing.IibStatus = incoming.IibStatus;
+            existing.IibScore = incoming.IibScore;
+            existing.IibIsNegative = incoming.IibIsNegative;
+            existing.Nationality = incoming.Nationality;
+            existing.MaritalStatus = incoming.MaritalStatus;
+            existing.Qualification = incoming.Qualification;
+            existing.SpecialClass = incoming.SpecialClass;
+            existing.ResidentialCountry = incoming.ResidentialCountry;
+            existing.BusinessCountry = incoming.BusinessCountry;
+            existing.IsPregnant = incoming.IsPregnant;
+            existing.PregnancyWeeks = incoming.PregnancyWeeks;
+            existing.FamilyMedicalHistory = incoming.FamilyMedicalHistory;
+            existing.IsLaProposer = incoming.IsLaProposer;
+            existing.IsProposerCorporate = incoming.IsProposerCorporate;
+            existing.LaProposerRelation = incoming.LaProposerRelation;
+            existing.NomineeRelation = incoming.NomineeRelation;
+            existing.IsMedicalGenerated = incoming.IsMedicalGenerated;
+            existing.IsNarcotic = incoming.IsNarcotic;
+            existing.HardLiquorQuantity = incoming.HardLiquorQuantity;
+            existing.BeerQuantity = incoming.BeerQuantity;
+            existing.WineQuantity = incoming.WineQuantity;
+            existing.TobaccoQuantity = incoming.TobaccoQuantity;
+            existing.LiquorType = incoming.LiquorType;
+            existing.IibIsNewToIib = incoming.IibIsNewToIib;
+            existing.FgliPolicyStatuses = incoming.FgliPolicyStatuses;
+            existing.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+            await _context.SaveChangesAsync();
+            return Ok(existing);
+        }
+
+        incoming.Id = Guid.NewGuid().ToString();
+        incoming.CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        incoming.UpdatedAt = incoming.CreatedAt;
+        _context.Proposals.Add(incoming);
+        await _context.SaveChangesAsync();
+        return Ok(incoming);
+    }
+
     // Underwriting Evaluation
     [HttpPost("underwriting/evaluate")]
     public async Task<IActionResult> EvaluateProposal([FromBody] ProposalData proposal)
