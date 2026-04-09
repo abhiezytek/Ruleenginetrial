@@ -14,11 +14,13 @@ public class ApiController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly RuleEngine _ruleEngine;
+    private readonly IRequirementMstService _requirementMstService;
     
-    public ApiController(AppDbContext context, RuleEngine ruleEngine)
+    public ApiController(AppDbContext context, RuleEngine ruleEngine, IRequirementMstService requirementMstService)
     {
         _context = context;
         _ruleEngine = ruleEngine;
+        _requirementMstService = requirementMstService;
     }
     
     // Health endpoints
@@ -1207,6 +1209,19 @@ public class ApiController : ControllerBase
         
         var logs = await query.OrderByDescending(a => a.PerformedAt).Take(limit).ToListAsync();
         return Ok(logs.Select(ToAuditLogResponse));
+    }
+
+    // Requirements Master
+    [HttpGet("requirements")]
+    public async Task<IActionResult> GetRequirements(
+        [FromQuery] int page = 1,
+        [FromQuery] int page_size = 10,
+        [FromQuery] string? search = null,
+        [FromQuery] string? category = null,
+        [FromQuery] bool? is_active = null)
+    {
+        var result = await _requirementMstService.GetPagedAsync(page, page_size, search, category, is_active);
+        return Ok(result);
     }
     
     // Evaluations History

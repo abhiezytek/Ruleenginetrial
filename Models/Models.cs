@@ -770,3 +770,53 @@ public class AppliedRiskBand
     public object? FieldValue { get; set; }
 }
 
+// Requirement Master
+public class RequirementMst
+{
+    [Key]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+
+    [Required]
+    [MaxLength(50)]
+    public string Code { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(255)]
+    public string Name { get; set; } = string.Empty;
+
+    public string? Description { get; set; }
+
+    [MaxLength(100)]
+    public string Category { get; set; } = "Medical";
+
+    public bool IsActive { get; set; } = true;
+
+    public int SortOrder { get; set; } = 100;
+
+    public string CreatedAt { get; set; } = DateTime.UtcNow.ToString("o");
+
+    public string UpdatedAt { get; set; } = DateTime.UtcNow.ToString("o");
+}
+
+public class RequirementMstResponse
+{
+    public string Id { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string Category { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public int SortOrder { get; set; }
+    public string CreatedAt { get; set; } = string.Empty;
+    public string UpdatedAt { get; set; } = string.Empty;
+}
+
+public class PagedResult<T>
+{
+    public List<T> Items { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages { get; set; }
+}
+
