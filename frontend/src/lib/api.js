@@ -51,6 +51,7 @@ export const api = {
   getDashboardStats: () => client.get('/api/dashboard/stats'),
   evaluate: (proposalData) => client.post('/api/underwriting/evaluate', proposalData),
   evaluateBatch: (proposals) => client.post('/api/underwriting/evaluate-batch', proposals),
+  getRequirements: (params) => client.get('/api/requirements', { params }),
 };
 
 export default api;

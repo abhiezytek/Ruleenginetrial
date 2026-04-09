@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<RuleTemplate> RuleTemplates { get; set; }
+    public DbSet<RequirementMst> RequirementMsts { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -189,6 +190,20 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<RuleTemplate>().Property(t => t.IsActive).HasColumnName("is_active");
         modelBuilder.Entity<RuleTemplate>().Property(t => t.CreatedAt).HasColumnName("created_at");
         modelBuilder.Entity<RuleTemplate>().HasIndex(t => t.TemplateId).IsUnique();
+
+        // ==================== REQUIREMENT_MST TABLE ====================
+        modelBuilder.Entity<RequirementMst>().ToTable("requirement_mst");
+        modelBuilder.Entity<RequirementMst>().Property(r => r.Id).HasColumnName("id");
+        modelBuilder.Entity<RequirementMst>().Property(r => r.Code).HasColumnName("code");
+        modelBuilder.Entity<RequirementMst>().Property(r => r.Name).HasColumnName("name");
+        modelBuilder.Entity<RequirementMst>().Property(r => r.Description).HasColumnName("description");
+        modelBuilder.Entity<RequirementMst>().Property(r => r.Category).HasColumnName("category");
+        modelBuilder.Entity<RequirementMst>().Property(r => r.IsActive).HasColumnName("is_active");
+        modelBuilder.Entity<RequirementMst>().Property(r => r.SortOrder).HasColumnName("sort_order");
+        modelBuilder.Entity<RequirementMst>().Property(r => r.CreatedAt).HasColumnName("created_at");
+        modelBuilder.Entity<RequirementMst>().Property(r => r.UpdatedAt).HasColumnName("updated_at");
+        modelBuilder.Entity<RequirementMst>().HasIndex(r => r.Code).IsUnique();
+        modelBuilder.Entity<RequirementMst>().HasIndex(r => r.Category);
 
         // ==================== EXISTING TABLES (PascalCase to match existing DB) ====================
     }
