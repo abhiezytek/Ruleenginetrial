@@ -76,6 +76,13 @@ const EMPTY_FORM = {
 const EMPTY_MAPPINGS = { rules: [], grids: [], scorecards: [] };
 
 // ── Map Proposal DB record → form fields ─────────────────────────────────────
+
+function resolveIsLaProposer(p) {
+  if (p.is_la_proposer !== undefined) return p.is_la_proposer;
+  if (p.is_la_proposer_same !== undefined) return p.is_la_proposer_same;
+  return true;
+}
+
 function mapProposalToForm(p) {
   return {
     ...EMPTY_FORM,
@@ -140,7 +147,7 @@ function mapProposalToForm(p) {
     fgli_policy_statuses: Array.isArray(p.fgli_policy_statuses)
       ? p.fgli_policy_statuses.join(', ')
       : (p.fgli_policy_statuses || ''),
-    is_la_proposer: p.is_la_proposer !== undefined ? p.is_la_proposer : (p.is_la_proposer_same !== undefined ? p.is_la_proposer_same : true),
+    is_la_proposer: resolveIsLaProposer(p),
     is_proposer_corporate: p.is_proposer_corporate || false,
     la_proposer_relation: p.la_proposer_relation || '',
     nominee_relation: p.nominee_relation || '',
@@ -626,7 +633,7 @@ export default function ProposalEvaluator() {
                     <Field label="Smoking Years"><ROText value={form.smoking_years} /></Field>
                   </>
                 )}
-                <Field label="Tobacco Qty (g/day)" span={form.is_smoker ? 3 : 1}>
+                <Field label="Tobacco Qty (g/day)">
                   <ROText value={form.tobacco_quantity} />
                 </Field>
                 <Field label="Alcoholic">
