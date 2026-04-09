@@ -6,7 +6,6 @@ import {
   History,
   BookOpen,
   FileText,
-  ClipboardList,
   Menu,
   X,
   LogOut,
@@ -19,7 +18,6 @@ const navItems = [
   { to: '/history', label: 'History', icon: History },
   { to: '/rules', label: 'Rules', icon: BookOpen },
   { to: '/templates', label: 'Templates', icon: FileText },
-  { to: '/requirements', label: 'Requirements', icon: ClipboardList },
 ];
 
 // Criterion brand logo
