@@ -21,6 +21,7 @@ public class AppDbContext : DbContext
     public DbSet<ProductMedicalTrigger> ProductMedicalTriggers { get; set; }
     public DbSet<GridMapping> GridMappings { get; set; }
     public DbSet<ScorecardMapping> ScorecardMappings { get; set; }
+    public DbSet<Proposal> Proposals { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -233,6 +234,82 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ScorecardMapping>().Property(m => m.ScorecardId).HasColumnName("scorecard_id").IsRequired();
         modelBuilder.Entity<ScorecardMapping>().Property(m => m.CreatedAt).HasColumnName("created_at");
         modelBuilder.Entity<ScorecardMapping>().HasIndex(m => new { m.ProductId, m.ScorecardId }).IsUnique();
+
+        // ==================== PROPOSALS TABLE ====================
+        // NOTE: Proposal.cs already has [Table("proposals")] and [Index] attributes;
+        // here we only add explicit snake_case column-name overrides.
+        modelBuilder.Entity<Proposal>().Property(p => p.Id).HasColumnName("id");
+        modelBuilder.Entity<Proposal>().Property(p => p.ProposalNumber).HasColumnName("proposal_number");
+        modelBuilder.Entity<Proposal>().Property(p => p.PolicyNumber).HasColumnName("policy_number");
+        modelBuilder.Entity<Proposal>().Property(p => p.ProductCode).HasColumnName("product_code");
+        modelBuilder.Entity<Proposal>().Property(p => p.ProductType).HasColumnName("product_type");
+        modelBuilder.Entity<Proposal>().Property(p => p.ProductCategory).HasColumnName("product_category");
+        modelBuilder.Entity<Proposal>().Property(p => p.PaymentMode).HasColumnName("payment_mode");
+        modelBuilder.Entity<Proposal>().Property(p => p.ModeOfPurchase).HasColumnName("mode_of_purchase");
+        modelBuilder.Entity<Proposal>().Property(p => p.PolicyTerm).HasColumnName("policy_term");
+        modelBuilder.Entity<Proposal>().Property(p => p.PremiumPaymentTerm).HasColumnName("premium_payment_term");
+        modelBuilder.Entity<Proposal>().Property(p => p.ApplicantAge).HasColumnName("applicant_age");
+        modelBuilder.Entity<Proposal>().Property(p => p.ApplicantGender).HasColumnName("applicant_gender");
+        modelBuilder.Entity<Proposal>().Property(p => p.ApplicantIncome).HasColumnName("applicant_income");
+        modelBuilder.Entity<Proposal>().Property(p => p.ProposerIncome).HasColumnName("proposer_income");
+        modelBuilder.Entity<Proposal>().Property(p => p.SumAssured).HasColumnName("sum_assured");
+        modelBuilder.Entity<Proposal>().Property(p => p.Premium).HasColumnName("premium");
+        modelBuilder.Entity<Proposal>().Property(p => p.ExistingCoverage).HasColumnName("existing_coverage");
+        modelBuilder.Entity<Proposal>().Property(p => p.Height).HasColumnName("height");
+        modelBuilder.Entity<Proposal>().Property(p => p.Weight).HasColumnName("weight");
+        modelBuilder.Entity<Proposal>().Property(p => p.Bmi).HasColumnName("bmi");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsSmoker).HasColumnName("is_smoker");
+        modelBuilder.Entity<Proposal>().Property(p => p.CigarettesPerDay).HasColumnName("cigarettes_per_day");
+        modelBuilder.Entity<Proposal>().Property(p => p.SmokingYears).HasColumnName("smoking_years");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsAlcoholic).HasColumnName("is_alcoholic");
+        modelBuilder.Entity<Proposal>().Property(p => p.AlcoholType).HasColumnName("alcohol_type");
+        modelBuilder.Entity<Proposal>().Property(p => p.AlcoholQuantity).HasColumnName("alcohol_quantity");
+        modelBuilder.Entity<Proposal>().Property(p => p.HasMedicalHistory).HasColumnName("has_medical_history");
+        modelBuilder.Entity<Proposal>().Property(p => p.AilmentType).HasColumnName("ailment_type");
+        modelBuilder.Entity<Proposal>().Property(p => p.AilmentDetails).HasColumnName("ailment_details");
+        modelBuilder.Entity<Proposal>().Property(p => p.AilmentDurationYears).HasColumnName("ailment_duration_years");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsAilmentOngoing).HasColumnName("is_ailment_ongoing");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsAdventurous).HasColumnName("is_adventurous");
+        modelBuilder.Entity<Proposal>().Property(p => p.OccupationCode).HasColumnName("occupation_code");
+        modelBuilder.Entity<Proposal>().Property(p => p.OccupationClass).HasColumnName("occupation_class");
+        modelBuilder.Entity<Proposal>().Property(p => p.OccupationRisk).HasColumnName("occupation_risk");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsOccupationHazardous).HasColumnName("is_occupation_hazardous");
+        modelBuilder.Entity<Proposal>().Property(p => p.AgentCode).HasColumnName("agent_code");
+        modelBuilder.Entity<Proposal>().Property(p => p.AgentTier).HasColumnName("agent_tier");
+        modelBuilder.Entity<Proposal>().Property(p => p.Pincode).HasColumnName("pincode");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsNegativePincode).HasColumnName("is_negative_pincode");
+        modelBuilder.Entity<Proposal>().Property(p => p.AmlCategory).HasColumnName("aml_category");
+        modelBuilder.Entity<Proposal>().Property(p => p.RiskCategory).HasColumnName("risk_category");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsPep).HasColumnName("is_pep");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsCriminallyConvicted).HasColumnName("is_criminally_convicted");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsOfac).HasColumnName("is_ofac");
+        modelBuilder.Entity<Proposal>().Property(p => p.IibStatus).HasColumnName("iib_status");
+        modelBuilder.Entity<Proposal>().Property(p => p.IibScore).HasColumnName("iib_score");
+        modelBuilder.Entity<Proposal>().Property(p => p.IibIsNegative).HasColumnName("iib_is_negative");
+        modelBuilder.Entity<Proposal>().Property(p => p.Nationality).HasColumnName("nationality");
+        modelBuilder.Entity<Proposal>().Property(p => p.MaritalStatus).HasColumnName("marital_status");
+        modelBuilder.Entity<Proposal>().Property(p => p.Qualification).HasColumnName("qualification");
+        modelBuilder.Entity<Proposal>().Property(p => p.SpecialClass).HasColumnName("special_class");
+        modelBuilder.Entity<Proposal>().Property(p => p.ResidentialCountry).HasColumnName("residential_country");
+        modelBuilder.Entity<Proposal>().Property(p => p.BusinessCountry).HasColumnName("business_country");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsPregnant).HasColumnName("is_pregnant");
+        modelBuilder.Entity<Proposal>().Property(p => p.PregnancyWeeks).HasColumnName("pregnancy_weeks");
+        modelBuilder.Entity<Proposal>().Property(p => p.FamilyMedicalHistory).HasColumnName("family_medical_history");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsLaProposer).HasColumnName("is_la_proposer");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsProposerCorporate).HasColumnName("is_proposer_corporate");
+        modelBuilder.Entity<Proposal>().Property(p => p.LaProposerRelation).HasColumnName("la_proposer_relation");
+        modelBuilder.Entity<Proposal>().Property(p => p.NomineeRelation).HasColumnName("nominee_relation");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsMedicalGenerated).HasColumnName("is_medical_generated");
+        modelBuilder.Entity<Proposal>().Property(p => p.IsNarcotic).HasColumnName("is_narcotic");
+        modelBuilder.Entity<Proposal>().Property(p => p.HardLiquorQuantity).HasColumnName("hard_liquor_quantity");
+        modelBuilder.Entity<Proposal>().Property(p => p.BeerQuantity).HasColumnName("beer_quantity");
+        modelBuilder.Entity<Proposal>().Property(p => p.WineQuantity).HasColumnName("wine_quantity");
+        modelBuilder.Entity<Proposal>().Property(p => p.TobaccoQuantity).HasColumnName("tobacco_quantity");
+        modelBuilder.Entity<Proposal>().Property(p => p.LiquorType).HasColumnName("liquor_type");
+        modelBuilder.Entity<Proposal>().Property(p => p.IibIsNewToIib).HasColumnName("iib_is_new_to_iib");
+        modelBuilder.Entity<Proposal>().Property(p => p.FgliPolicyStatuses).HasColumnName("fgli_policy_statuses");
+        modelBuilder.Entity<Proposal>().Property(p => p.CreatedAt).HasColumnName("created_at");
+        modelBuilder.Entity<Proposal>().Property(p => p.UpdatedAt).HasColumnName("updated_at");
 
         // ==================== EXISTING TABLES (PascalCase to match existing DB) ====================
 

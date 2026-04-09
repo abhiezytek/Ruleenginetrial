@@ -175,6 +175,10 @@ export const toggleRiskBand = (id) => api.patch(`/risk-bands/${id}/toggle`);
 // Underwriting Evaluation API
 export const evaluateProposal = (data) => api.post('/underwriting/evaluate', data);
 
+// Proposals API
+export const getProposalByPolicyNumber = (policyNumber) => api.get(`/proposals/by-policy/${policyNumber}`);
+export const saveProposal = (data) => api.post('/proposals', data);
+
 // Evaluations History API
 export const getEvaluations = (params) => api.get('/evaluations', { params });
 export const getEvaluation = (id) => api.get(`/evaluations/${id}`);
