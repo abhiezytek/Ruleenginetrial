@@ -163,6 +163,7 @@ const DEFAULT_FORM = {
   nominee_relation: '',
 };
 
+
 // ================= UI HELPERS =================
 
 // Accordion section wrapper
@@ -327,9 +328,69 @@ function ResultPanel({ result, onReset }) {
 // ================= MAIN =================
 
 export default function Evaluate() {
+  debugger;
+  // Assume this comes from API or constant
+  const extraFields = [
+    {
+      id: 1,
+      slot: "extra_1",
+      label: "Passport Number",
+      type: "text",
+      options: "",
+      is_required: true,
+      display_order: 1
+    },
+    {
+      id: 2,
+      slot: "extra_2",
+      label: "Is Politician",
+      type: "checkbox",
+      options: "",
+      is_required: true,
+      display_order: 1
+    },
+    {
+      id: 3,
+      slot: "extra_3",
+      label: "Risk Grade",
+      type: "select",
+      options: "[\"Low\", \"Medium\", \"High\"]",
+      is_required: true,
+      display_order: 1
+    }
+  ];
   const [form, setForm] = useState(DEFAULT_FORM)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
+  debugger;
+  // const [extraFields, setExtraFields] = useState([]);
+  const fetchDynamicField = async () => {
+    try {
+
+      // setLoading(true);
+      // const response = await api.getDynamicFields();
+      // const data = response.data;
+      // setExtraFields(data);
+    } catch (error) {
+      console.error('Failed to fetch dynamic field:', error);
+      toast.error('Failed to load dynamic field');
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchDynamicField();
+  }, []);
+
+  // // ?? Handle Change
+  // const handleChange = (e) => {
+  //   const { name, value, type, checked } = e.target;
+
+  //   setForm((prev) => ({
+  //     ...prev,
+  //     [name]: type === "checkbox" ? checked : value
+  //   }));
+  // };
 
   // BMI AUTO CALC
   useEffect(() => {
@@ -554,7 +615,7 @@ export default function Evaluate() {
 
         {/* // ================= SECTION 5 ================= */}
         <Section title="5 · Residential Status">
-           <Field label="Residential Country">
+          <Field label="Residential Country">
             <SelectInput name="residential_country" value={form.residential_country} onChange={handleChange}>
               <option value="India">India</option>
               <option value="Standard">Standard</option>
@@ -563,7 +624,7 @@ export default function Evaluate() {
           </Field>
 
           <Field label="Business Country">
-            <TextInput name="business_country" value={form.business_country} onChange={handleChange}  placeholder="e.g. USA (optional)" />
+            <TextInput name="business_country" value={form.business_country} onChange={handleChange} placeholder="e.g. USA (optional)" />
           </Field>
         </Section>
 
@@ -707,7 +768,7 @@ export default function Evaluate() {
         </Section>
 
         {/* // ================= SECTION 9 ================= */}
-      <Section title="9 · Compliance & Flags">
+        <Section title="9 · Compliance & Flags">
           <Field label="PEP">
             <div className="pt-1">
               <CheckboxInput name="is_pep" checked={form.is_pep} onChange={handleChange} label="Politically Exposed Person" />
@@ -786,6 +847,67 @@ export default function Evaluate() {
             <TextInput name="nominee_relation" value={form.nominee_relation} onChange={handleChange} placeholder="e.g. Spouse, Child" />
           </Field>
         </Section>
+
+        {/* // ================= SECTION 12 ================= */}
+        <Section title="12 · Additional Information">
+          {extraFields
+            .sort((a, b) => a.display_order - b.display_order)
+            .map((field) => {
+              const isRequired = field.is_required;
+
+              switch (field.type) {
+                case "text":
+                  return (
+                    <Field key={field.id} label={`${field.label}${isRequired ? " *" : ""}`}>
+                      <TextInput
+                        name={field.slot}
+                        value={form[field.slot] || ""}
+                        onChange={handleChange}
+                        placeholder={`Enter ${field.label}`}
+                      />
+                    </Field>
+                  );
+
+                case "checkbox":
+                  return (
+                    <Field key={field.id} label={`${field.label}${isRequired ? " *" : ""}`}>
+                      <div className="pt-1">
+                        <CheckboxInput
+                          name={field.slot}
+                          checked={!!form[field.slot]}
+                          onChange={handleChange}
+                          label={field.label}
+                        />
+                      </div>
+                    </Field>
+                  );
+
+                case "select":
+                  const options = field.options ? JSON.parse(field.options) : [];
+
+                  return (
+                    <Field key={field.id} label={`${field.label}${isRequired ? " *" : ""}`}>
+                      <select
+                        name={field.slot}
+                        value={form[field.slot] || ""}
+                        onChange={handleChange}
+                        className="form-select"
+                      >
+                        <option value="">Select {field.label}</option>
+                        {options.map((opt, index) => (
+                          <option key={index} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  );
+
+                default:
+                  return null;
+              }
+            })}
+        </Section>
         <div className="flex gap-3 mt-6">
           <Button type="submit" disabled={loading}>
             {loading ? "Evaluating..." : "Evaluate Proposal"}
@@ -805,3 +927,5 @@ export default function Evaluate() {
     </div>
   )
 }
+
+

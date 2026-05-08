@@ -892,3 +892,45 @@ public class MaturityAgeRequest
     public DateTime DateOfBirth { get; set; }
     public DateTime MaturityDate { get; set; }
 }
+
+public class DynamicField
+{
+    public int Id { get; set; }
+
+    public string Slot { get; set; } = string.Empty;   // extra_1 ... extra_15
+
+    public string Label { get; set; } = string.Empty;
+
+    public string Type { get; set; } = string.Empty;   // text, number, checkbox, select
+
+    public string? Options { get; set; }               // JSON string
+
+    public bool IsRequired { get; set; } = false;
+
+    public int DisplayOrder { get; set; } = 0;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+public class CreateDynamicFieldDto
+{
+    public string Slot { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string? Options { get; set; }
+    public bool IsRequired { get; set; }
+    public int DisplayOrder { get; set; }
+}
+
+public class DynamicFieldDto
+{
+    public int Id { get; set; }
+    public string Slot { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string? Options { get; set; }
+    public bool IsRequired { get; set; }
+    public int DisplayOrder { get; set; }
+}

@@ -21,6 +21,7 @@ public class AppDbContext : DbContext
     public DbSet<ProductMedicalTrigger> ProductMedicalTriggers { get; set; }
     public DbSet<GridMapping> GridMappings { get; set; }
     public DbSet<ScorecardMapping> ScorecardMappings { get; set; }
+    public DbSet<DynamicField> DynamicFields { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -233,6 +234,22 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ScorecardMapping>().Property(m => m.ScorecardId).HasColumnName("scorecard_id").IsRequired();
         modelBuilder.Entity<ScorecardMapping>().Property(m => m.CreatedAt).HasColumnName("created_at");
         modelBuilder.Entity<ScorecardMapping>().HasIndex(m => new { m.ProductId, m.ScorecardId }).IsUnique();
+
+        //DynamicFiledMappings
+        modelBuilder.Entity<DynamicField>().ToTable("dynamic_fields");
+        modelBuilder.Entity<DynamicField>().HasKey(m => m.Id);
+        modelBuilder.Entity<DynamicField>().Property(m => m.Slot).HasColumnName("slot").IsRequired();
+        modelBuilder.Entity<DynamicField>().Property(m => m.Label).HasColumnName("label").IsRequired();
+        modelBuilder.Entity<DynamicField>().Property(m => m.Type).HasColumnName("type").IsRequired();
+        modelBuilder.Entity<DynamicField>().Property(m => m.Options).HasColumnName("options");
+        modelBuilder.Entity<DynamicField>().Property(m => m.IsRequired).HasColumnName("is_required").IsRequired();
+        modelBuilder.Entity<DynamicField>().Property(m => m.DisplayOrder).HasColumnName("display_order").IsRequired();
+        modelBuilder.Entity<DynamicField>().Property(m => m.CreatedAt).HasColumnName("created_at");
+        modelBuilder.Entity<DynamicField>().Property(m => m.UpdatedAt).HasColumnName("updated_at");
+        modelBuilder.Entity<DynamicField>().HasIndex(m => new { m.Slot }).IsUnique();
+        //modelBuilder.Entity<DynamicField>()
+        //    .HasIndex(x => x.Slot)
+        //    .IsUnique();
 
         // ==================== EXISTING TABLES (PascalCase to match existing DB) ====================
 

@@ -1829,6 +1829,81 @@ public class ApiController : ControllerBase
         });
     }
 
+
+    [HttpGet("dynamic")]
+    public async Task<ActionResult<IEnumerable<DynamicFieldDto>>> GetAllDynamicFields()
+    {
+        var fields = await _context.DynamicFields
+            .OrderBy(x => x.DisplayOrder)
+            .Select(x => new DynamicFieldDto
+            {
+                Id = x.Id,
+                Slot = x.Slot,
+                Label = x.Label,
+                Type = x.Type,
+                Options = x.Options,
+                IsRequired = x.IsRequired,
+                DisplayOrder = x.DisplayOrder
+            })
+            .ToListAsync();
+
+        return Ok(fields);
+    }
+
+    // ================= CREATE =================
+    [HttpPost("dynamic")]
+    public async Task<ActionResult> CreateDynamicField(CreateDynamicFieldDto dto)
+    {
+        // ?? Validate slot reuse
+        var exists = await _context.DynamicFields
+            .AnyAsync(x => x.Slot == dto.Slot);
+
+        if (exists)
+        {
+            return BadRequest($"Slot '{dto.Slot}' is already in use.");
+        }
+
+        // ?? Validate type
+        var allowedTypes = new[] { "text", "number", "checkbox", "select" };
+        if (!allowedTypes.Contains(dto.Type))
+        {
+            return BadRequest("Invalid field type.");
+        }
+
+        var field = new DynamicField
+        {
+            Slot = dto.Slot,
+            Label = dto.Label,
+            Type = dto.Type,
+            Options = dto.Options,
+            IsRequired = dto.IsRequired,
+            DisplayOrder = dto.DisplayOrder,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.DynamicFields.Add(field);
+        await _context.SaveChangesAsync();
+
+        return Ok(field);
+    }
+
+    // ================= DELETE =================
+    [HttpDelete("dynamic/{id}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        var field = await _context.DynamicFields.FindAsync(id);
+
+        if (field == null)
+            return NotFound();
+
+        _context.DynamicFields.Remove(field);
+        await _context.SaveChangesAsync();
+
+        return Ok();
+    }
+
+
     private RiskLoadingResult CalculateRiskLoading(ProposalData proposal)
     {
         var bands = _context.RiskBands.Where(b => b.IsEnabled).OrderBy(b => b.Priority).ToList();

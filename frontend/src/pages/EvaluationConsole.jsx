@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../components/ui/switch';
 import { StatusBadge, CaseTypeBadge, CategoryBadge } from '../components/shared/StatusBadge';
 import { PageLoader } from '../components/shared/LoadingSpinner';
-import { evaluateProposal, getProducts } from '../lib/api';
+import { evaluateProposal, getProducts, getDynamicFields } from '../lib/api';
 import { PAYMENT_MODE, PRODUCT_TYPES, PRODUCT_CATEGORIES, MODEOFPURCHES, QUALIFICATIONS, MARITAL_STATUSES, NATIONALITY, IIB_STATUSES, LA_PROPOSER, NOMINEE_RELATION, GENDER, PRODUCT_CODES, OCCUPATIONS, PREVIOUS_POLICY_STATUS, PROPOSER_TYPE, PRODUCT_MAPPING, OCCUPATION_MAPPING, SPECIAL_CLASS, ALCOHOL_TYPE } from '../lib/constants';
 import { toast } from 'sonner';
 import {
@@ -137,7 +137,7 @@ const EvaluationConsole = () => {
   const [traceExpanded, setTraceExpanded] = useState({});
   const [proposal, setProposal] = useState(getEmptyProposal);
   const [openSections, setOpenSections] = useState(["section1"]);
-
+  const [extraFields, setExtraFields] = useState([]);
   // BMI Calculation - FIXED: now correctly sets 'bmi' not 'calcbmi'
   useEffect(() => {
     const h = parseFloat(proposal.height);
@@ -153,6 +153,7 @@ const EvaluationConsole = () => {
 
   useEffect(() => {
     fetchProducts();
+    fetchDynamicField();
   }, []);
 
   const fetchProducts = async () => {
@@ -161,6 +162,20 @@ const EvaluationConsole = () => {
       setProducts(response.data);
     } catch (error) {
       console.error('Failed to fetch products:', error);
+    }
+  };
+
+  const fetchDynamicField = async () => {
+    try {
+      // setLoading(true);
+      const response = await getDynamicFields();
+      const data = response.data;
+      setExtraFields(data);
+    } catch (error) {
+      console.error('Failed to fetch dynamic field:', error);
+      toast.error('Failed to load dynamic field');
+    } finally {
+      // setLoading(false);
     }
   };
 
@@ -1666,6 +1681,67 @@ const EvaluationConsole = () => {
                       <Label className="text-slate-600 text-sm cursor-pointer">Medical Report Generated</Label>
                     </div>
                   </div>
+                </Section>
+
+                {/* // ================= SECTION 11 ================= */}
+                <Section title="11 · Additional Information">
+                  {extraFields
+                    .sort((a, b) => a.display_order - b.display_order)
+                    .map((field) => {
+                      const isRequired = field.is_required;
+
+                      switch (field.type) {
+                        case "text":
+                          return (
+                            <Field key={field.id} label={`${field.label}${isRequired ? " *" : ""}`}>
+                              <TextInput
+                                name={field.slot}
+                                value={form[field.slot] || ""}
+                                onChange={handleChange}
+                                placeholder={`Enter ${field.label}`}
+                              />
+                            </Field>
+                          );
+
+                        case "checkbox":
+                          return (
+                            <Field key={field.id} label={`${field.label}${isRequired ? " *" : ""}`}>
+                              <div className="pt-1">
+                                <CheckboxInput
+                                  name={field.slot}
+                                  checked={!!form[field.slot]}
+                                  onChange={handleChange}
+                                  label={field.label}
+                                />
+                              </div>
+                            </Field>
+                          );
+
+                        case "select":
+                          const options = field.options ? JSON.parse(field.options) : [];
+
+                          return (
+                            <Field key={field.id} label={`${field.label}${isRequired ? " *" : ""}`}>
+                              <select
+                                name={field.slot}
+                                value={form[field.slot] || ""}
+                                onChange={handleChange}
+                                className="form-select"
+                              >
+                                <option value="">Select {field.label}</option>
+                                {options.map((opt, index) => (
+                                  <option key={index} value={opt}>
+                                    {opt}
+                                  </option>
+                                ))}
+                              </select>
+                            </Field>
+                          );
+
+                        default:
+                          return null;
+                      }
+                    })}
                 </Section>
 
                 {/* Evaluate Button */}
